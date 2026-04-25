@@ -1,0 +1,43 @@
+<view class="page quiz-page">
+  <view class="page-title">课堂测验</view>
+  <view class="page-subtitle">用几道小题检查学生是否能把风向、气压和降水联系起来。</view>
+
+  <view class="score-card card" wx:if="{{submitted}}">
+    <text>得分</text>
+    <text>{{score}} / {{questions.length}}</text>
+  </view>
+
+  <view
+    wx:for="{{questions}}"
+    wx:key="stem"
+    wx:for-item="question"
+    wx:for-index="questionIndex"
+    class="question-card card"
+  >
+    <text class="question-title">{{questionIndex + 1}}. {{question.stem}}</text>
+    <view class="option-list">
+      <button
+        wx:for="{{question.options}}"
+        wx:key="*this"
+        wx:for-item="option"
+        wx:for-index="optionIndex"
+        class="option-btn {{selectedList[questionIndex] === optionIndex ? 'selected' : ''}} {{submitted && question.answerIndex === optionIndex ? 'correct' : ''}} {{submitted && selectedList[questionIndex] === optionIndex && question.answerIndex !== optionIndex ? 'wrong' : ''}}"
+        data-question="{{questionIndex}}"
+        data-option="{{optionIndex}}"
+        bindtap="chooseOption"
+      >
+        <text class="option-letter">{{['A', 'B', 'C', 'D'][optionIndex]}}</text>
+        <text class="option-text">{{option}}</text>
+      </button>
+    </view>
+    <view class="analysis" wx:if="{{submitted}}">
+      <text>解析：{{question.explanation}}</text>
+    </view>
+  </view>
+
+  <view class="quiz-actions">
+    <button class="secondary-btn" bindtap="goModel">返回模型</button>
+    <button class="secondary-btn" wx:if="{{submitted}}" bindtap="resetQuiz">重新作答</button>
+    <button class="primary-btn" wx:else bindtap="submitQuiz">提交答案</button>
+  </view>
+</view>

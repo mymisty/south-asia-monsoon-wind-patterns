@@ -1,0 +1,2008 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>南亚季风互动模型</title>
+  <style>
+    :root {
+      --ink: #163348;
+      --muted: #607382;
+      --paper: #f4f7fb;
+      --card: #ffffff;
+      --green: #1f7a68;
+      --green-soft: #eaf6f1;
+      --blue: #376da4;
+      --orange: #df6a3f;
+      --line: rgba(37, 91, 118, 0.14);
+      --shadow: 0 18px 44px rgba(31, 76, 98, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 36px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      min-width: 260px;
+    }
+
+    .brand-title {
+      display: block;
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1.15;
+    }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .tab {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #395567;
+      font-weight: 700;
+    }
+
+    .tab.active {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      min-height: 610px;
+      overflow: hidden;
+    }
+
+    .hero-visual {
+      position: relative;
+      min-height: 610px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(232, 248, 251, 0.08) 0%, rgba(191, 225, 234, 0.08) 100%),
+        url("assets/nasa/south-asia-nasa-summer.jpg") center / cover no-repeat;
+    }
+
+    .hero-land,
+    .hero-peninsula,
+    .hero-ocean,
+    .hero-ridge,
+    .hero-wind,
+    .hero-rain {
+      position: absolute;
+    }
+
+    .hero-land {
+      left: 10%;
+      top: 8%;
+      width: 82%;
+      height: 34%;
+      border-radius: 45% 48% 22% 16%;
+      background: #e6d3ae;
+      transform: rotate(-4deg);
+    }
+
+    .hero-peninsula {
+      left: 42%;
+      top: 31%;
+      width: 28%;
+      height: 38%;
+      border-radius: 42% 36% 54% 52%;
+      background: #dcc197;
+      transform: rotate(10deg);
+    }
+
+    .hero-ocean.left {
+      left: -20%;
+      top: 48%;
+      width: 60%;
+      height: 46%;
+      border-radius: 50%;
+      background: rgba(90, 176, 201, 0.25);
+    }
+
+    .hero-ocean.right {
+      right: -23%;
+      top: 48%;
+      width: 62%;
+      height: 50%;
+      border-radius: 50%;
+      background: rgba(74, 163, 194, 0.22);
+    }
+
+    .hero-ridge {
+      left: 35%;
+      top: 25%;
+      width: 42%;
+      height: 14px;
+      border-radius: 999px;
+      background: #938271;
+      box-shadow: 0 12px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .hero-land,
+    .hero-peninsula,
+    .hero-ocean,
+    .hero-ridge {
+      display: none;
+    }
+
+    .hero-wind {
+      width: 160px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--orange);
+      transform: rotate(-39deg);
+    }
+
+    .hero-wind::after {
+      content: "";
+      position: absolute;
+      right: -16px;
+      top: -12px;
+      border-left: 28px solid var(--orange);
+      border-top: 18px solid transparent;
+      border-bottom: 18px solid transparent;
+    }
+
+    .hero-wind.a {
+      left: 18%;
+      top: 68%;
+    }
+
+    .hero-wind.b {
+      left: 53%;
+      top: 69%;
+    }
+
+    .hero-rain {
+      left: 55%;
+      top: 36%;
+      width: 36%;
+      height: 30%;
+      border-radius: 50%;
+      background: rgba(35, 129, 196, 0.23);
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 56px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 14px 0 0;
+      font-size: 56px;
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .pill {
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: rgba(31, 122, 104, 0.1);
+      color: #1e675c;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .primary,
+    .secondary,
+    .small-action {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 18px;
+      font-weight: 800;
+    }
+
+    .primary {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 14px 26px rgba(31, 122, 104, 0.22);
+    }
+
+    .secondary {
+      border: 1px solid rgba(31, 122, 104, 0.25);
+      background: #fff;
+      color: #1f6d5e;
+    }
+
+    .section-head {
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.2;
+    }
+
+    .section-subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    .region-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+      gap: 18px;
+    }
+
+    .region-map {
+      position: relative;
+      min-height: 530px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04)),
+        url("assets/nasa/south-asia-nasa-summer.jpg") center / cover no-repeat;
+    }
+
+    .region-map .land-main {
+      position: absolute;
+      left: 12%;
+      top: 8%;
+      width: 76%;
+      height: 34%;
+      border-radius: 42% 48% 22% 20%;
+      background: #e7d7b8;
+      transform: rotate(-4deg);
+    }
+
+    .region-map .land-pen {
+      position: absolute;
+      left: 40%;
+      top: 31%;
+      width: 28%;
+      height: 40%;
+      border-radius: 44% 36% 56% 50%;
+      background: #dcc39d;
+      transform: rotate(9deg);
+    }
+
+    .region-map .ocean-left,
+    .region-map .ocean-right {
+      position: absolute;
+      bottom: -8%;
+      height: 52%;
+      border-radius: 50%;
+      background: rgba(58, 151, 188, 0.24);
+    }
+
+    .region-map .ocean-left {
+      left: -18%;
+      width: 58%;
+    }
+
+    .region-map .ocean-right {
+      right: -18%;
+      width: 62%;
+    }
+
+    .region-map .mountain {
+      position: absolute;
+      left: 34%;
+      top: 25%;
+      width: 45%;
+      height: 18px;
+      border-radius: 999px;
+      background: #938271;
+      box-shadow: 0 13px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .region-map .land-main,
+    .region-map .land-pen,
+    .region-map .ocean-left,
+    .region-map .ocean-right,
+    .region-map .mountain {
+      display: none;
+    }
+
+    .latitude {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: rgba(40, 92, 116, 0.25);
+    }
+
+    .latitude.tropic {
+      top: 35.9%;
+    }
+
+    .latitude.equator {
+      top: 87.3%;
+    }
+
+    .feature-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      color: #214456;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .feature-label.water {
+      color: #1a668c;
+    }
+
+    .feature-label.mountain-label {
+      color: #6d5341;
+    }
+
+    .region-question {
+      padding: 26px;
+    }
+
+    .region-question h3,
+    .explain h3,
+    .state-card h3,
+    .quiz-card h3 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .question-big {
+      display: block;
+      margin-top: 18px;
+      font-size: 24px;
+      font-weight: 850;
+      line-height: 1.45;
+    }
+
+    .answer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .answer-grid span {
+      padding: 18px 12px;
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: #1e6b5b;
+      text-align: center;
+      font-weight: 850;
+    }
+
+    .summary-text {
+      display: block;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .model-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stage {
+      padding: 14px;
+    }
+
+    #monsoonCanvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      background: #d8eef4;
+    }
+
+    .control-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .season-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .season-button {
+      min-height: 72px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px 14px;
+      text-align: left;
+    }
+
+    .season-button strong,
+    .season-button span {
+      display: block;
+    }
+
+    .season-button strong {
+      font-size: 17px;
+    }
+
+    .season-button span {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .season-button.active {
+      border-color: var(--green);
+      box-shadow: 0 12px 26px rgba(31, 122, 104, 0.13);
+    }
+
+    .toggle-card,
+    .explain,
+    .state-card,
+    .impact-card {
+      padding: 20px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 52px;
+      border-bottom: 1px solid rgba(38, 77, 96, 0.08);
+    }
+
+    .toggle-row:last-child {
+      border-bottom: 0;
+    }
+
+    .toggle-row span {
+      display: block;
+    }
+
+    .toggle-title {
+      font-weight: 800;
+    }
+
+    .toggle-desc {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toggle-row input {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--green);
+    }
+
+    .small-action {
+      width: 100%;
+      background: #eef6f3;
+      color: #1f6d5e;
+    }
+
+    .logic-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .logic-list li {
+      position: relative;
+      padding-left: 18px;
+      color: #455d6d;
+      line-height: 1.55;
+    }
+
+    .logic-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .state-grid div {
+      min-height: 74px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f5f8f8;
+    }
+
+    .state-grid span {
+      display: block;
+    }
+
+    .state-grid span:first-child {
+      color: #74848e;
+      font-size: 13px;
+    }
+
+    .state-grid span:last-child {
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: 850;
+    }
+
+    .impact-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .impact-card strong {
+      color: #1f6d5e;
+      font-size: 18px;
+    }
+
+    .impact-card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .compare-table {
+      overflow: hidden;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 0.72fr 1.28fr 1.28fr;
+      border-bottom: 1px solid rgba(39, 83, 101, 0.1);
+    }
+
+    .table-row:last-child {
+      border-bottom: 0;
+    }
+
+    .table-row span {
+      display: flex;
+      align-items: center;
+      min-height: 66px;
+      padding: 14px;
+      color: #314d5d;
+      line-height: 1.42;
+    }
+
+    .table-row span:first-child {
+      background: #f4f8f8;
+      color: #17364b;
+      font-weight: 850;
+    }
+
+    .table-row span:nth-child(2) {
+      background: rgba(232, 245, 251, 0.64);
+    }
+
+    .table-row span:nth-child(3) {
+      background: rgba(255, 246, 235, 0.72);
+    }
+
+    .table-head span {
+      min-height: 56px;
+      background: #244e62 !important;
+      color: #fff !important;
+      font-weight: 900;
+    }
+
+    .quiz-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .quiz-card {
+      padding: 22px;
+    }
+
+    .option-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      border: 2px solid rgba(39, 83, 101, 0.1);
+      border-radius: 8px;
+      background: #f8fafb;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    .option.selected {
+      border-color: var(--green);
+      background: #edf8f4;
+    }
+
+    .option.correct {
+      border-color: var(--green);
+      background: #e9f7f0;
+    }
+
+    .option.wrong {
+      border-color: #c95f47;
+      background: #fff0eb;
+    }
+
+    .letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      color: #1f6d5e;
+      font-weight: 850;
+    }
+
+    .analysis {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f4f8f8;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .analysis.visible {
+      display: block;
+    }
+
+    .score-card {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 18px 22px;
+      background: var(--green-soft);
+    }
+
+    .score-card.visible {
+      display: flex;
+    }
+
+    .score-card strong {
+      font-size: 30px;
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .quiz-actions button {
+      flex: 1;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 20;
+      transform: translateX(-50%);
+      display: none;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(22, 51, 72, 0.92);
+      color: #fff;
+      font-weight: 750;
+      box-shadow: 0 12px 30px rgba(22, 51, 72, 0.22);
+    }
+
+    .toast.visible {
+      display: block;
+    }
+
+    @media (max-width: 860px) {
+      .topbar,
+      .hero,
+      .region-grid,
+      .model-layout,
+      .impact-row {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      .tabs {
+        justify-content: flex-start;
+      }
+
+      .hero-copy {
+        padding: 32px;
+      }
+
+      h1 {
+        font-size: 42px;
+      }
+
+      .hero,
+      .hero-visual {
+        min-height: 520px;
+      }
+
+      .state-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        width: min(100vw - 20px, 1180px);
+        padding-top: 14px;
+      }
+
+      .brand-title {
+        font-size: 24px;
+      }
+
+      .tab {
+        padding: 0 10px;
+        font-size: 14px;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      .lead {
+        font-size: 16px;
+      }
+
+      .actions,
+      .quiz-actions {
+        flex-direction: column;
+      }
+
+      .section-title {
+        font-size: 26px;
+      }
+
+      .state-grid,
+      .answer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-row {
+        grid-template-columns: 0.76fr 1.12fr 1.12fr;
+      }
+
+      .table-row span {
+        min-height: 74px;
+        padding: 10px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-title">南亚季风互动模型</span>
+        <span class="brand-subtitle">高中地理课堂演示 · 本地浏览器版</span>
+      </div>
+      <nav class="tabs" aria-label="页面导航">
+        <button class="tab active" data-page="home">首页</button>
+        <button class="tab" data-page="region">区域认知</button>
+        <button class="tab" data-page="model">互动模型</button>
+        <button class="tab" data-page="compare">冬夏对比</button>
+        <button class="tab" data-page="quiz">课堂测验</button>
+      </nav>
+    </header>
+
+    <section class="page active" id="home">
+      <div class="hero card">
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-ocean left"></div>
+          <div class="hero-ocean right"></div>
+          <div class="hero-land"></div>
+          <div class="hero-peninsula"></div>
+          <div class="hero-ridge"></div>
+          <div class="hero-rain"></div>
+          <div class="hero-wind a"></div>
+          <div class="hero-wind b"></div>
+        </div>
+        <div class="hero-copy">
+          <span class="eyebrow">高中地理 · 选择性必修1</span>
+          <h1>南亚季风互动模型</h1>
+          <p class="lead">从季节变化、海陆热力差异和气压差异，理解南亚旱雨季的形成。</p>
+          <div class="pill-row">
+            <span class="pill">海陆热力差异</span>
+            <span class="pill">风向变化</span>
+            <span class="pill">地形抬升降水</span>
+          </div>
+          <div class="actions">
+            <button class="primary" data-goto="region">开始探究</button>
+            <button class="secondary" data-goto="model">直接看模型</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="region">
+      <div class="section-head">
+        <h2 class="section-title">先看空间背景</h2>
+        <p class="section-subtitle">南亚季风不是只看风向，还要先把海洋、高山和纬线位置放进同一张图里。</p>
+      </div>
+      <div class="region-grid">
+        <div class="region-map card">
+          <div class="ocean-left"></div>
+          <div class="ocean-right"></div>
+          <div class="land-main"></div>
+          <div class="land-pen"></div>
+          <div class="latitude tropic"></div>
+          <div class="latitude equator"></div>
+          <div class="mountain"></div>
+          <span class="feature-label" style="left: 53.6%; top: 43.9%;">印度半岛</span>
+          <span class="feature-label water" style="left: 34.5%; top: 57.3%;">阿拉伯海</span>
+          <span class="feature-label water" style="left: 66.7%; top: 57.3%;">孟加拉湾</span>
+          <span class="feature-label water" style="left: 47.6%; top: 94.5%;">印度洋</span>
+          <span class="feature-label mountain-label" style="left: 60.7%; top: 16.8%;">喜马拉雅山脉</span>
+          <span class="feature-label" style="left: 7.1%; top: 87.3%;">赤道</span>
+          <span class="feature-label" style="left: 9.4%; top: 35.9%;">北回归线</span>
+        </div>
+        <aside class="region-question card">
+          <h3>思考问题</h3>
+          <span class="question-big">南亚为什么容易受海洋和高山共同影响？</span>
+          <div class="answer-grid">
+            <span>三面临海</span>
+            <span>一面高山</span>
+          </div>
+          <span class="summary-text">印度洋提供水汽，喜马拉雅山影响气流抬升和区域降水分布。</span>
+          <div class="actions">
+            <button class="primary" data-goto="model">进入季风模型</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="page" id="model">
+      <div class="section-head">
+        <h2 class="section-title">季风模型</h2>
+        <p class="section-subtitle">切换冬季和夏季，观察热力、气压、风向和降水如何一起改变。</p>
+      </div>
+      <div class="model-layout">
+        <div>
+          <div class="stage card">
+            <canvas id="monsoonCanvas" width="1280" height="720"></canvas>
+          </div>
+          <div class="state-card card" style="margin-top: 14px;">
+            <h3>当前模型状态</h3>
+            <div class="state-grid" id="stateGrid"></div>
+          </div>
+          <div class="impact-row" id="impactRow"></div>
+        </div>
+        <aside class="control-stack">
+          <div class="season-buttons">
+            <button class="season-button active" data-season="winter">
+              <strong>冬季 / 1月</strong>
+              <span>东北季风 · 干燥少雨</span>
+            </button>
+            <button class="season-button" data-season="summer">
+              <strong>夏季 / 7月</strong>
+              <span>西南季风 · 暖湿多雨</span>
+            </button>
+          </div>
+          <div class="toggle-card card">
+            <label class="toggle-row">
+              <span>
+                <span class="toggle-title">显示地形</span>
+                <span class="toggle-desc">喜马拉雅山与迎风坡降水</span>
+              </span>
+              <input type="checkbox" id="showTerrain" checked>
+            </label>
+            <label class="toggle-row">
+              <span>
+                <span class="toggle-title">显示降水</span>
+                <span class="toggle-desc">雨季阴影或旱季色调</span>
+              </span>
+              <input type="checkbox" id="showRainfall" checked>
+            </label>
+            <label class="toggle-row">
+              <span>
+                <span class="toggle-title">显示风带移动</span>
+                <span class="toggle-desc">夏季东南信风越赤道右偏</span>
+              </span>
+              <input type="checkbox" id="showWindBelt">
+            </label>
+          </div>
+          <div class="explain card">
+            <h3 id="explainTitle">冬季 / 1月 · 东北季风</h3>
+            <ul class="logic-list" id="logicList"></ul>
+          </div>
+          <button class="small-action" id="exportCanvas">导出当前模型图</button>
+          <button class="small-action" id="fullscreenBtn">投屏全屏</button>
+          <button class="small-action" id="resetCacheBtn">重置课堂状态</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="page" id="compare">
+      <div class="section-head">
+        <h2 class="section-title">冬夏季风对比</h2>
+        <p class="section-subtitle">把气压、风向、降水和人类活动放在同一张表里，便于课堂归纳。</p>
+      </div>
+      <div class="compare-table card" id="compareTable"></div>
+      <div class="actions">
+        <button class="secondary" data-goto="model">返回模型</button>
+        <button class="primary" data-goto="quiz">开始测验</button>
+      </div>
+    </section>
+
+    <section class="page" id="quiz">
+      <div class="section-head">
+        <h2 class="section-title">课堂测验</h2>
+        <p class="section-subtitle">用几道小题检查学生是否能把风向、气压和降水联系起来。</p>
+      </div>
+      <div class="score-card card" id="scoreCard">
+        <span>得分</span>
+        <strong id="scoreText">0 / 4</strong>
+      </div>
+      <div class="quiz-list" id="quizList"></div>
+      <div class="quiz-actions">
+        <button class="secondary" data-goto="model">返回模型</button>
+        <button class="secondary" id="resetQuiz">重新作答</button>
+        <button class="primary" id="submitQuiz">提交答案</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">已导出当前模型图</div>
+
+  <script>
+    const monsoonConfig = {
+      winter: {
+        label: '冬季 / 1月',
+        landPressure: 'H',
+        oceanPressure: 'L',
+        windName: '东北季风',
+        windFeature: '干燥少雨',
+        landThermal: '大陆降温快',
+        oceanThermal: '海洋相对较暖',
+        rainfallLevel: '少雨，形成旱季',
+        logic: [
+          '亚洲大陆降温快，形成冷高压。',
+          '气流由亚洲内陆一侧吹向印度洋。',
+          '形成东北季风，南亚大部分地区干燥少雨。'
+        ],
+        impactCards: [
+          ['农业节奏', '降水偏少，灌溉条件会影响旱季作物产量。'],
+          ['灾害提示', '部分地区可能出现季节性干旱和水资源紧张。']
+        ]
+      },
+      summer: {
+        label: '夏季 / 7月',
+        landPressure: 'L',
+        oceanPressure: 'H',
+        windName: '西南季风',
+        windFeature: '暖湿多雨',
+        landThermal: '大陆升温快',
+        oceanThermal: '海洋相对较冷',
+        rainfallLevel: '多雨，形成雨季',
+        logic: [
+          '亚洲大陆升温快，形成热低压。',
+          '印度洋暖湿气流吹向陆地。',
+          '南半球东南信风越过赤道后右偏，成为西南季风的重要来源。',
+          '水汽受喜马拉雅山抬升，南亚降水增多。'
+        ],
+        impactCards: [
+          ['农业节奏', '雨热同期，是南亚主要农作物生长的重要水源。'],
+          ['灾害提示', '降水过强会增加洪涝、城市内涝和山地滑坡风险。']
+        ]
+      }
+    };
+
+    const compareRows = [
+      ['项目', '冬季风', '夏季风'],
+      ['季节', '冬季', '夏季'],
+      ['气压', '大陆高压，海洋相对低压', '大陆低压，海洋相对高压'],
+      ['风向', '东北季风', '西南季风'],
+      ['来源', '亚洲内陆', '印度洋'],
+      ['性质', '干燥', '暖湿'],
+      ['降水', '少雨，形成旱季', '多雨，形成雨季'],
+      ['影响', '灌溉压力、旱情风险', '作物生长旺盛，洪涝风险上升']
+    ];
+
+    const questions = [
+      {
+        stem: '南亚夏季风主要来自哪里？',
+        options: ['亚洲内陆', '印度洋', '北冰洋', '太平洋北部'],
+        answerIndex: 1,
+        explanation: '夏季风主要来自印度洋，携带大量水汽，使南亚进入雨季。'
+      },
+      {
+        stem: '冬季南亚盛行的季风是？',
+        options: ['西南季风', '东北季风', '西北风', '东南风'],
+        answerIndex: 1,
+        explanation: '冬季亚洲大陆形成冷高压，气流由陆地吹向海洋，形成东北季风。'
+      },
+      {
+        stem: '南亚夏季多雨的原因包括哪些？',
+        options: ['海陆热力差异', '气压带风带季节移动', '喜马拉雅山抬升', '以上都是'],
+        answerIndex: 3,
+        explanation: '夏季风的形成和降水增强，受到海陆热力差异、风带移动和地形抬升的共同影响。'
+      },
+      {
+        stem: '喜马拉雅山脉对夏季风降水的主要作用是？',
+        options: ['阻挡全部水汽', '削弱海陆热力差异', '使暖湿气流抬升形成降水', '让冬季风变得湿润'],
+        answerIndex: 2,
+        explanation: '暖湿气流遇到高大山脉被迫抬升，水汽凝结，迎风坡降水增强。'
+      }
+    ];
+
+    const CACHE_KEY = 'southAsiaMonsoonLocalState';
+    const CACHE_VERSION = '2026-04-25-local-v2';
+    const PAGE_IDS = ['home', 'region', 'model', 'compare', 'quiz'];
+    const SEASONS = ['winter', 'summer'];
+
+    const defaultState = {
+      page: 'home',
+      season: 'winter',
+      showTerrain: true,
+      showRainfall: true,
+      showWindBelt: false,
+      selected: questions.map(() => -1),
+      submitted: false
+    };
+
+    const state = {
+      ...defaultState,
+      ...loadCachedState()
+    };
+
+    const canvas = document.getElementById('monsoonCanvas');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('toast');
+    const mapImages = {
+      winter: new Image(),
+      summer: new Image()
+    };
+    const mapBounds = {
+      lonMin: 33.09006365362301,
+      lonMax: 116.90993634637698,
+      latMin: -6,
+      latMax: 38
+    };
+    let animationFrameId = null;
+    let lastAnimationPaint = 0;
+
+    function n(value, size) {
+      return value * size;
+    }
+
+    function mercY(lat) {
+      const rad = lat * Math.PI / 180;
+      return Math.log(Math.tan(Math.PI / 4 + rad / 2));
+    }
+
+    function project(lon, lat) {
+      const yTop = mercY(mapBounds.latMax);
+      const yBottom = mercY(mapBounds.latMin);
+      return {
+        x: (lon - mapBounds.lonMin) / (mapBounds.lonMax - mapBounds.lonMin) * canvas.width,
+        y: (yTop - mercY(lat)) / (yTop - yBottom) * canvas.height
+      };
+    }
+
+    function lerpPoint(a, b, t) {
+      return {
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t
+      };
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('visible');
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove('visible'), 1800);
+    }
+
+    mapImages.winter.src = 'assets/nasa/south-asia-nasa-winter.jpg';
+    mapImages.summer.src = 'assets/nasa/south-asia-nasa-summer.jpg';
+    Object.values(mapImages).forEach((image) => {
+      image.addEventListener('load', () => {
+        if (state.page === 'model') {
+          drawModel();
+        }
+      });
+      image.addEventListener('error', () => {
+        showToast('NASA 底图加载失败，已使用备用示意图');
+      });
+    });
+
+    function readStorage() {
+      try {
+        return window.localStorage;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function normalizeSelected(value) {
+      if (!Array.isArray(value) || value.length !== questions.length) {
+        return questions.map(() => -1);
+      }
+      return value.map((item) => {
+        const index = Number(item);
+        return Number.isInteger(index) && index >= -1 && index < 4 ? index : -1;
+      });
+    }
+
+    function loadCachedState() {
+      const storage = readStorage();
+      if (!storage) {
+        return {};
+      }
+
+      try {
+        const raw = storage.getItem(CACHE_KEY);
+        if (!raw) {
+          return {};
+        }
+        const cached = JSON.parse(raw);
+        if (!cached || cached.version !== CACHE_VERSION) {
+          try {
+            storage.removeItem(CACHE_KEY);
+          } catch (cleanupError) {
+            return {};
+          }
+          return {};
+        }
+        return {
+          page: PAGE_IDS.includes(cached.page) ? cached.page : defaultState.page,
+          season: SEASONS.includes(cached.season) ? cached.season : defaultState.season,
+          showTerrain: typeof cached.showTerrain === 'boolean' ? cached.showTerrain : defaultState.showTerrain,
+          showRainfall: typeof cached.showRainfall === 'boolean' ? cached.showRainfall : defaultState.showRainfall,
+          showWindBelt: typeof cached.showWindBelt === 'boolean' ? cached.showWindBelt : defaultState.showWindBelt,
+          selected: normalizeSelected(cached.selected),
+          submitted: typeof cached.submitted === 'boolean' ? cached.submitted : defaultState.submitted
+        };
+      } catch (error) {
+        try {
+          storage.removeItem(CACHE_KEY);
+        } catch (cleanupError) {
+          return {};
+        }
+        return {};
+      }
+    }
+
+    function saveCachedState() {
+      const storage = readStorage();
+      if (!storage) {
+        return;
+      }
+
+      const payload = {
+        version: CACHE_VERSION,
+        page: state.page,
+        season: state.season,
+        showTerrain: state.showTerrain,
+        showRainfall: state.showRainfall,
+        showWindBelt: state.showWindBelt,
+        selected: state.selected,
+        submitted: state.submitted,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        storage.setItem(CACHE_KEY, JSON.stringify(payload));
+      } catch (error) {
+        showToast('浏览器缓存不可用');
+      }
+    }
+
+    function scheduleCacheSave() {
+      window.clearTimeout(scheduleCacheSave.timer);
+      scheduleCacheSave.timer = window.setTimeout(saveCachedState, 120);
+    }
+
+    function clearCachedState() {
+      const storage = readStorage();
+      if (storage) {
+        try {
+          storage.removeItem(CACHE_KEY);
+        } catch (error) {
+          showToast('缓存清理失败');
+        }
+      }
+      Object.assign(state, {
+        ...defaultState,
+        selected: questions.map(() => -1)
+      });
+      syncControlsFromState();
+      renderQuiz();
+      setPage('home');
+      drawModel();
+      saveCachedState();
+      showToast('已重置课堂状态');
+    }
+
+    function syncControlsFromState() {
+      document.getElementById('showTerrain').checked = state.showTerrain;
+      document.getElementById('showRainfall').checked = state.showRainfall;
+      document.getElementById('showWindBelt').checked = state.showWindBelt;
+      document.querySelectorAll('[data-season]').forEach((item) => {
+        item.classList.toggle('active', item.dataset.season === state.season);
+      });
+    }
+
+    function setPage(page) {
+      state.page = page;
+      document.querySelectorAll('.page').forEach((item) => item.classList.toggle('active', item.id === page));
+      document.querySelectorAll('.tab').forEach((item) => item.classList.toggle('active', item.dataset.page === page));
+      if (page === 'model') {
+        requestAnimationFrame((time) => drawModel(time, true));
+        startModelAnimation();
+      } else {
+        stopModelAnimation();
+      }
+      scheduleCacheSave();
+    }
+
+    function startModelAnimation() {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      const loop = (time) => {
+        if (state.page === 'model') {
+          if (time - lastAnimationPaint > 33) {
+            lastAnimationPaint = time;
+            drawModel(time, false);
+          }
+          animationFrameId = requestAnimationFrame(loop);
+        } else {
+          animationFrameId = null;
+        }
+      };
+      animationFrameId = requestAnimationFrame(loop);
+    }
+
+    function stopModelAnimation() {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    }
+
+    function drawPolygon(points, fill, stroke) {
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        const x = n(point[0], canvas.width);
+        const y = n(point[1], canvas.height);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+    }
+
+    function drawLabel(text, x, y, color, size, align = 'center') {
+      ctx.save();
+      ctx.font = `700 ${size}px "Microsoft YaHei", sans-serif`;
+      ctx.textAlign = align;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetY = 2;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawArrowHead(x, y, angle, color, size) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - Math.cos(angle - Math.PI / 6) * size, y - Math.sin(angle - Math.PI / 6) * size);
+      ctx.lineTo(x - Math.cos(angle + Math.PI / 6) * size, y - Math.sin(angle + Math.PI / 6) * size);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function drawArrow(start, end, color, label) {
+      const x1 = n(start[0], canvas.width);
+      const y1 = n(start[1], canvas.height);
+      const x2 = n(end[0], canvas.width);
+      const y2 = n(end[1], canvas.height);
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 14;
+      ctx.stroke();
+      drawArrowHead(x2, y2, angle, color, 36);
+      if (label) drawLabel(label, (x1 + x2) / 2, (y1 + y2) / 2 - 38, color, 30);
+    }
+
+    function drawAnimatedArrowGeo(startGeo, endGeo, color, label, time, offset = 0) {
+      const start = project(startGeo[0], startGeo[1]);
+      const end = project(endGeo[0], endGeo[1]);
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.58;
+      ctx.lineWidth = 12;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      drawArrowHead(end.x, end.y, angle, color, 34);
+
+      for (let i = 0; i < 4; i += 1) {
+        const t = ((time * 0.00022 + offset + i * 0.22) % 1 + 1) % 1;
+        const p = lerpPoint(start, end, t);
+        ctx.globalAlpha = 0.22 + 0.55 * Math.sin(Math.PI * t);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 9 + 4 * Math.sin(Math.PI * t), 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        drawArrowHead(p.x + Math.cos(angle) * 15, p.y + Math.sin(angle) * 15, angle, color, 18);
+      }
+      ctx.restore();
+
+      if (label) {
+        const mid = lerpPoint(start, end, 0.52);
+        drawLabel(label, mid.x, mid.y - 34, color, 30);
+      }
+    }
+
+    function quadraticPoint(start, control, end, t) {
+      const one = 1 - t;
+      return {
+        x: one * one * start.x + 2 * one * t * control.x + t * t * end.x,
+        y: one * one * start.y + 2 * one * t * control.y + t * t * end.y
+      };
+    }
+
+    function drawAnimatedCurveGeo(startGeo, controlGeo, endGeo, color, label, time, offset = 0) {
+      const start = project(startGeo[0], startGeo[1]);
+      const control = project(controlGeo[0], controlGeo[1]);
+      const end = project(endGeo[0], endGeo[1]);
+      const angle = Math.atan2(end.y - control.y, end.x - control.x);
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.62;
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      drawArrowHead(end.x, end.y, angle, color, 32);
+
+      for (let i = 0; i < 5; i += 1) {
+        const t = ((time * 0.00018 + offset + i * 0.18) % 1 + 1) % 1;
+        const p = quadraticPoint(start, control, end, t);
+        const ahead = quadraticPoint(start, control, end, Math.min(1, t + 0.03));
+        const particleAngle = Math.atan2(ahead.y - p.y, ahead.x - p.x);
+        ctx.globalAlpha = 0.24 + 0.52 * Math.sin(Math.PI * t);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        drawArrowHead(p.x + Math.cos(particleAngle) * 12, p.y + Math.sin(particleAngle) * 12, particleAngle, color, 16);
+      }
+      ctx.restore();
+
+      if (label) {
+        const mid = quadraticPoint(start, control, end, 0.48);
+        drawLabel(label, mid.x, mid.y + 42, color, 27);
+      }
+    }
+
+    function drawCurvedArrow(start, control, end, color, label) {
+      const x1 = n(start[0], canvas.width);
+      const y1 = n(start[1], canvas.height);
+      const cx = n(control[0], canvas.width);
+      const cy = n(control[1], canvas.height);
+      const x2 = n(end[0], canvas.width);
+      const y2 = n(end[1], canvas.height);
+      const angle = Math.atan2(y2 - cy, x2 - cx);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo(cx, cy, x2, y2);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 12;
+      ctx.stroke();
+      drawArrowHead(x2, y2, angle, color, 34);
+      drawLabel(label, n(0.36, canvas.width), n(0.72, canvas.height), color, 28);
+    }
+
+    function drawPressure(x, y, type, caption) {
+      const cx = n(x, canvas.width);
+      const cy = n(y, canvas.height);
+      const isHigh = type === 'H';
+      const color = isHigh ? '#c75b3a' : '#2d76b6';
+      const bg = isHigh ? 'rgba(255, 238, 224, 0.95)' : 'rgba(226, 243, 255, 0.95)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 52, 0, Math.PI * 2);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      drawLabel(type, cx, cy - 2, color, 58);
+      drawLabel(caption, cx, cy + 82, color, 28);
+    }
+
+    function drawPressureGeo(lon, lat, type, caption) {
+      const point = project(lon, lat);
+      drawPressure(point.x / canvas.width, point.y / canvas.height, type, caption);
+    }
+
+    function drawBaseMap() {
+      const season = state.season;
+      const image = mapImages[season];
+
+      if (image.complete && image.naturalWidth > 0) {
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.fillStyle = 'rgba(247, 251, 255, 0.08)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        const equator = project(33.09, 0).y;
+        const tropic = project(33.09, 23.5).y;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.48)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, equator);
+        ctx.lineTo(canvas.width, equator);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, tropic);
+        ctx.lineTo(canvas.width, tropic);
+        ctx.stroke();
+
+        const arabianSea = project(62, 14);
+        const bayOfBengal = project(89, 14);
+        const indianOcean = project(73, -3.4);
+        const india = project(78, 20);
+        const tropicLabel = project(41, 23.5);
+        const equatorLabel = project(39, 0);
+        drawLabel('阿拉伯海', arabianSea.x, arabianSea.y, '#eefaff', 30);
+        drawLabel('孟加拉湾', bayOfBengal.x, bayOfBengal.y, '#eefaff', 30);
+        drawLabel('印度洋', indianOcean.x, indianOcean.y, '#eefaff', 32);
+        drawLabel('印度半岛', india.x, india.y, '#ffffff', 30);
+        drawLabel('北回归线', tropicLabel.x, tropicLabel.y - 18, '#ffffff', 25);
+        drawLabel('赤道', equatorLabel.x, equatorLabel.y - 18, '#ffffff', 25);
+        drawLabel('NASA Blue Marble 底图', n(0.86, canvas.width), n(0.96, canvas.height), 'rgba(255, 255, 255, 0.86)', 22);
+        return;
+      }
+
+      const oceanColor = season === 'summer' ? '#bfe9f1' : '#d2e9f1';
+      const landColor = season === 'summer' ? '#ead09e' : '#e3d6c2';
+      const mainlandColor = season === 'summer' ? '#e9c487' : '#d9cdbd';
+
+      ctx.fillStyle = oceanColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = '#6bb6ca';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 8; i += 1) {
+        ctx.beginPath();
+        ctx.arc(n(0.18 + i * 0.11, canvas.width), n(0.74, canvas.height), 90 + i * 7, 0.2, 2.85);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      drawPolygon([
+        [0.08, 0.11], [0.25, 0.05], [0.55, 0.04], [0.90, 0.11],
+        [0.91, 0.35], [0.75, 0.40], [0.62, 0.34], [0.48, 0.38],
+        [0.31, 0.32], [0.14, 0.34]
+      ], mainlandColor, '#c5b089');
+
+      drawPolygon([
+        [0.37, 0.34], [0.50, 0.36], [0.63, 0.44], [0.61, 0.62],
+        [0.54, 0.82], [0.45, 0.70], [0.37, 0.56], [0.30, 0.43]
+      ], landColor, '#bfa876');
+
+      drawPolygon([[0.63, 0.42], [0.76, 0.46], [0.76, 0.58], [0.66, 0.60]], landColor, '#bfa876');
+
+      ctx.beginPath();
+      ctx.arc(n(0.56, canvas.width), n(0.84, canvas.height), 22, 0, Math.PI * 2);
+      ctx.fillStyle = '#dcc59b';
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(39, 83, 101, 0.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, n(0.82, canvas.height));
+      ctx.lineTo(canvas.width, n(0.82, canvas.height));
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, n(0.42, canvas.height));
+      ctx.lineTo(canvas.width, n(0.42, canvas.height));
+      ctx.stroke();
+
+      drawLabel('阿拉伯海', n(0.19, canvas.width), n(0.64, canvas.height), '#327da0', 28);
+      drawLabel('孟加拉湾', n(0.73, canvas.width), n(0.67, canvas.height), '#327da0', 28);
+      drawLabel('印度洋', n(0.45, canvas.width), n(0.92, canvas.height), '#2d7696', 31);
+      drawLabel('印度半岛', n(0.48, canvas.width), n(0.54, canvas.height), '#6b5a3d', 28);
+      drawLabel('北回归线', n(0.12, canvas.width), n(0.40, canvas.height), '#62747c', 24);
+      drawLabel('赤道', n(0.08, canvas.width), n(0.80, canvas.height), '#62747c', 24);
+    }
+
+    function drawTerrain() {
+      const ridge = [
+        [68, 31.5],
+        [74, 32.2],
+        [81, 30.7],
+        [88, 29.8],
+        [95, 28.7]
+      ].map(([lon, lat]) => project(lon, lat));
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+      ctx.lineWidth = 18;
+      ctx.beginPath();
+      ridge.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+
+      ctx.strokeStyle = '#7b634e';
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ridge.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+      ctx.restore();
+
+      const label = project(84, 32.6);
+      drawLabel('喜马拉雅山脉', label.x, label.y - 24, '#ffffff', 30);
+    }
+
+    function drawRain(time = performance.now()) {
+      if (state.season === 'summer') {
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        const bayRain = [[82, 20], [92, 20], [99, 26], [95, 32], [84, 30], [78, 25]]
+          .map(([lon, lat]) => {
+            const p = project(lon, lat);
+            return [p.x / canvas.width, p.y / canvas.height];
+          });
+        const westRain = [[66, 7], [74, 9], [77, 19], [72, 23], [67, 16]]
+          .map(([lon, lat]) => {
+            const p = project(lon, lat);
+            return [p.x / canvas.width, p.y / canvas.height];
+          });
+        drawPolygon(bayRain, '#248bd4');
+        drawPolygon(westRain, '#248bd4');
+        ctx.restore();
+        ctx.strokeStyle = '#1d80c1';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 24; i += 1) {
+          const lon = 69 + (i % 8) * 3.6 + Math.sin(i * 1.7) * 0.8;
+          const lat = 9 + Math.floor(i / 8) * 7.2 + Math.cos(i * 2.1) * 0.8;
+          const p = project(lon, lat);
+          const fall = ((time * 0.08 + i * 23) % 44);
+          const x = p.x + Math.sin(time * 0.001 + i) * 6;
+          const y = p.y + fall;
+          ctx.globalAlpha = 0.42 + 0.28 * Math.sin(time * 0.004 + i);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 14, y + 34);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        const label = project(90, 27);
+        drawLabel('迎风坡降水增强', label.x, label.y + 42, '#cfefff', 30);
+      } else {
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        const dryArea = [[66, 9], [88, 10], [91, 23], [77, 27], [61, 22]]
+          .map(([lon, lat]) => {
+            const p = project(lon, lat);
+            return [p.x / canvas.width, p.y / canvas.height];
+          });
+        drawPolygon(dryArea, '#b98254');
+        ctx.restore();
+        const label = project(78, 19);
+        drawLabel('干燥少雨', label.x, label.y + 28, '#fff4df', 32);
+      }
+    }
+
+    function drawCloudBlob(x, y, scale, alpha, color = '255, 255, 255') {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `rgba(${color}, 0.88)`;
+      ctx.beginPath();
+      ctx.ellipse(x - 26 * scale, y + 4 * scale, 30 * scale, 18 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y - 8 * scale, 36 * scale, 23 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + 30 * scale, y + 3 * scale, 32 * scale, 18 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawDynamicMoisture(time = performance.now()) {
+      const summerPaths = [
+        [[58, 2], [67, 10], [74, 20], [80, 27]],
+        [[82, 1], [87, 10], [91, 20], [91, 28]],
+        [[65, -2], [72, 7], [78, 15], [83, 24]]
+      ];
+
+      if (state.season === 'summer') {
+        summerPaths.forEach((path, pathIndex) => {
+          const points = path.map(([lon, lat]) => project(lon, lat));
+          for (let i = 0; i < 4; i += 1) {
+            const t = ((time * 0.00009 + i * 0.24 + pathIndex * 0.11) % 1 + 1) % 1;
+            const segment = Math.min(points.length - 2, Math.floor(t * (points.length - 1)));
+            const localT = (t * (points.length - 1)) - segment;
+            const p = lerpPoint(points[segment], points[segment + 1], localT);
+            const drift = Math.sin(time * 0.001 + i + pathIndex) * 8;
+            drawCloudBlob(p.x + drift, p.y - 12, 0.58 + pathIndex * 0.08, 0.22 + 0.18 * Math.sin(Math.PI * t));
+          }
+        });
+        return;
+      }
+
+      const dryPath = [[88, 31], [80, 24], [72, 17], [64, 9]];
+      const points = dryPath.map(([lon, lat]) => project(lon, lat));
+      for (let i = 0; i < 5; i += 1) {
+        const t = ((time * 0.00007 + i * 0.2) % 1 + 1) % 1;
+        const segment = Math.min(points.length - 2, Math.floor(t * (points.length - 1)));
+        const localT = (t * (points.length - 1)) - segment;
+        const p = lerpPoint(points[segment], points[segment + 1], localT);
+        drawCloudBlob(p.x, p.y, 0.42, 0.12, '221, 202, 171');
+      }
+    }
+
+    function drawFocusRegion(time = performance.now()) {
+      const outline = [
+        [66, 25],
+        [72, 31],
+        [82, 31],
+        [92, 27],
+        [94, 20],
+        [88, 13],
+        [80, 7],
+        [73, 7],
+        [68, 14],
+        [66, 25]
+      ].map(([lon, lat]) => project(lon, lat));
+      ctx.save();
+      ctx.strokeStyle = state.season === 'summer' ? '#fff4d7' : '#eaf8ff';
+      ctx.lineWidth = 4 + Math.sin(time * 0.003) * 1.2;
+      ctx.setLineDash([16, 12]);
+      ctx.globalAlpha = 0.72;
+      ctx.beginPath();
+      outline.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+      ctx.restore();
+
+      const label = project(75, 28.5);
+      drawLabel('南亚季风核心区', label.x, label.y - 24, '#ffffff', 25);
+    }
+
+    function drawModel(time = performance.now(), updateText = true) {
+      const config = monsoonConfig[state.season];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBaseMap();
+      drawFocusRegion(time);
+      if (state.showRainfall) {
+        drawRain(time);
+        drawDynamicMoisture(time);
+      }
+      if (state.showTerrain) drawTerrain();
+
+      if (state.season === 'winter') {
+        drawPressureGeo(75, 36, config.landPressure, '亚洲大陆冷高压控制');
+        drawPressureGeo(66, 1.5, config.oceanPressure, '印度洋相对低压');
+        drawAnimatedArrowGeo([88, 32], [75, 20], '#376da4', '东北季风', time, 0.1);
+        drawAnimatedArrowGeo([80, 28], [66, 12], '#376da4', '', time, 0.35);
+        drawAnimatedArrowGeo([93, 27], [88, 12], '#376da4', '', time, 0.58);
+      } else {
+        drawPressureGeo(74, 29, config.landPressure, '大陆热低压');
+        drawPressureGeo(54, 0.2, config.oceanPressure, '南印度洋高压方向');
+        drawAnimatedArrowGeo([55, 0], [72, 20], '#df6a3f', '阿拉伯海分支', time, 0.04);
+        drawAnimatedArrowGeo([76, -3], [84, 22], '#df6a3f', '西南季风', time, 0.28);
+        drawAnimatedArrowGeo([86, 0], [91, 25], '#df6a3f', '孟加拉湾分支', time, 0.52);
+        if (state.showWindBelt) {
+          drawAnimatedCurveGeo([103, -4.5], [82, -1], [68, 10], '#9a5ab8', '东南信风越赤道后右偏', time, 0.12);
+        }
+      }
+      const featureLabel = project(104, 34);
+      drawLabel(config.windFeature, featureLabel.x, featureLabel.y, state.season === 'summer' ? '#ffe4d5' : '#dff2ff', 36);
+      if (updateText) {
+        renderModelText();
+      }
+    }
+
+    function renderModelText() {
+      const config = monsoonConfig[state.season];
+      document.getElementById('explainTitle').textContent = `${config.label} · ${config.windName}`;
+      document.getElementById('logicList').innerHTML = config.logic.map((item) => `<li>${item}</li>`).join('');
+      const stateRows = [
+        ['大陆热力', config.landThermal],
+        ['海洋热力', config.oceanThermal],
+        ['大陆气压', config.landPressure],
+        ['海洋气压', config.oceanPressure],
+        ['降水', config.rainfallLevel],
+        ['风的性质', config.windFeature]
+      ];
+      document.getElementById('stateGrid').innerHTML = stateRows
+        .map(([label, value]) => `<div><span>${label}</span><span>${value}</span></div>`)
+        .join('');
+      document.getElementById('impactRow').innerHTML = config.impactCards
+        .map(([title, text]) => `<div class="impact-card card"><strong>${title}</strong><p>${text}</p></div>`)
+        .join('');
+    }
+
+    function renderCompare() {
+      document.getElementById('compareTable').innerHTML = compareRows.map((row, index) => `
+        <div class="table-row ${index === 0 ? 'table-head' : ''}">
+          <span>${row[0]}</span>
+          <span>${row[1]}</span>
+          <span>${row[2]}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderQuiz() {
+      document.getElementById('quizList').innerHTML = questions.map((question, questionIndex) => {
+        const options = question.options.map((option, optionIndex) => {
+          const selected = state.selected[questionIndex] === optionIndex;
+          const correct = state.submitted && question.answerIndex === optionIndex;
+          const wrong = state.submitted && selected && question.answerIndex !== optionIndex;
+          return `
+            <button class="option ${selected ? 'selected' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}" data-question="${questionIndex}" data-option="${optionIndex}">
+              <span class="letter">${['A', 'B', 'C', 'D'][optionIndex]}</span>
+              <span>${option}</span>
+            </button>
+          `;
+        }).join('');
+
+        return `
+          <article class="quiz-card card">
+            <h3>${questionIndex + 1}. ${question.stem}</h3>
+            <div class="option-list">${options}</div>
+            <div class="analysis ${state.submitted ? 'visible' : ''}">解析：${question.explanation}</div>
+          </article>
+        `;
+      }).join('');
+
+      const score = questions.reduce((total, question, index) => total + (state.selected[index] === question.answerIndex ? 1 : 0), 0);
+      document.getElementById('scoreText').textContent = `${score} / ${questions.length}`;
+      document.getElementById('scoreCard').classList.toggle('visible', state.submitted);
+      document.getElementById('resetQuiz').style.display = state.submitted ? 'block' : 'none';
+      document.getElementById('submitQuiz').style.display = state.submitted ? 'none' : 'block';
+    }
+
+    document.querySelectorAll('[data-page]').forEach((button) => {
+      button.addEventListener('click', () => setPage(button.dataset.page));
+    });
+
+    document.querySelectorAll('[data-goto]').forEach((button) => {
+      button.addEventListener('click', () => setPage(button.dataset.goto));
+    });
+
+    document.querySelectorAll('[data-season]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.season = button.dataset.season;
+        document.querySelectorAll('[data-season]').forEach((item) => item.classList.toggle('active', item === button));
+        drawModel();
+        scheduleCacheSave();
+      });
+    });
+
+    document.getElementById('showTerrain').addEventListener('change', (event) => {
+      state.showTerrain = event.target.checked;
+      drawModel();
+      scheduleCacheSave();
+    });
+
+    document.getElementById('showRainfall').addEventListener('change', (event) => {
+      state.showRainfall = event.target.checked;
+      drawModel();
+      scheduleCacheSave();
+    });
+
+    document.getElementById('showWindBelt').addEventListener('change', (event) => {
+      state.showWindBelt = event.target.checked;
+      drawModel();
+      scheduleCacheSave();
+    });
+
+    document.getElementById('exportCanvas').addEventListener('click', () => {
+      try {
+        const link = document.createElement('a');
+        link.download = `南亚季风模型-${state.season === 'summer' ? '夏季风' : '冬季风'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('已导出当前模型图');
+      } catch (error) {
+        showToast('导出失败，请用浏览器截图或本地服务器打开');
+      }
+    });
+
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+      const target = document.querySelector('.stage');
+      if (target.requestFullscreen) {
+        target.requestFullscreen();
+      } else {
+        showToast('当前浏览器不支持全屏');
+      }
+    });
+
+    document.getElementById('resetCacheBtn').addEventListener('click', clearCachedState);
+
+    document.getElementById('quizList').addEventListener('click', (event) => {
+      const option = event.target.closest('.option');
+      if (!option || state.submitted) return;
+      state.selected[Number(option.dataset.question)] = Number(option.dataset.option);
+      renderQuiz();
+      scheduleCacheSave();
+    });
+
+    document.getElementById('submitQuiz').addEventListener('click', () => {
+      if (state.selected.some((item) => item < 0)) {
+        showToast('请先完成全部题目');
+        return;
+      }
+      state.submitted = true;
+      renderQuiz();
+      scheduleCacheSave();
+    });
+
+    document.getElementById('resetQuiz').addEventListener('click', () => {
+      state.selected = questions.map(() => -1);
+      state.submitted = false;
+      renderQuiz();
+      scheduleCacheSave();
+    });
+
+    window.addEventListener('resize', () => {
+      if (state.page === 'model') drawModel();
+    });
+
+    syncControlsFromState();
+    renderCompare();
+    renderQuiz();
+    setPage(state.page);
+    drawModel();
+  </script>
+</body>
+</html>

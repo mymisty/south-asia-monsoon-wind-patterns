@@ -1,0 +1,14 @@
+{
+  "description": "南亚季风互动地理模型微信小程序",
+  "appid": "touristappid",
+  "projectname": "south-asia-monsoon",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./"
+}

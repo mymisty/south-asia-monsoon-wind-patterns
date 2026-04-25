@@ -1,0 +1,116 @@
+<view class="page model-page">
+  <view class="model-header">
+    <view>
+      <view class="page-title">季风模型</view>
+      <view class="page-subtitle">切换冬季和夏季，观察热力、气压、风向和降水如何一起改变。</view>
+    </view>
+    <button class="explain-toggle" bindtap="toggleExplain">{{showExplain ? '收起解释' : '查看解释'}}</button>
+  </view>
+
+  <view class="canvas-panel card">
+    <canvas
+      canvas-id="monsoonCanvas"
+      id="monsoonCanvas"
+      class="model-canvas"
+      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+    ></canvas>
+  </view>
+
+  <view class="season-tabs">
+    <button
+      class="season-btn winter {{season === 'winter' ? 'active' : ''}}"
+      data-season="winter"
+      bindtap="setSeason"
+    >
+      <text>冬季 / 1月</text>
+      <text>东北季风 · 干燥少雨</text>
+    </button>
+    <button
+      class="season-btn summer {{season === 'summer' ? 'active' : ''}}"
+      data-season="summer"
+      bindtap="setSeason"
+    >
+      <text>夏季 / 7月</text>
+      <text>西南季风 · 暖湿多雨</text>
+    </button>
+  </view>
+
+  <view class="switch-panel card">
+    <view class="switch-row">
+      <view>
+        <text class="switch-title">显示地形</text>
+        <text class="switch-desc">喜马拉雅山与迎风坡降水</text>
+      </view>
+      <switch checked="{{showTerrain}}" data-key="showTerrain" bindchange="toggleLayer" color="#1f7a68"></switch>
+    </view>
+    <view class="switch-row">
+      <view>
+        <text class="switch-title">显示降水</text>
+        <text class="switch-desc">雨季阴影或旱季色调</text>
+      </view>
+      <switch checked="{{showRainfall}}" data-key="showRainfall" bindchange="toggleLayer" color="#1f7a68"></switch>
+    </view>
+    <view class="switch-row">
+      <view>
+        <text class="switch-title">显示风带移动</text>
+        <text class="switch-desc">夏季东南信风越赤道右偏</text>
+      </view>
+      <switch checked="{{showWindBelt}}" data-key="showWindBelt" bindchange="toggleLayer" color="#1f7a68"></switch>
+    </view>
+  </view>
+
+  <view class="explain-card card" wx:if="{{showExplain}}">
+    <view class="explain-head">
+      <text class="section-title">{{config.label}}</text>
+      <text class="feature-tag">{{config.windName}}</text>
+    </view>
+    <view class="logic-list">
+      <view wx:for="{{config.logic}}" wx:key="*this" class="logic-item">
+        <text class="logic-dot"></text>
+        <text>{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="state-card card">
+    <text class="section-title">当前模型状态</text>
+    <view class="state-grid">
+      <view>
+        <text>大陆热力</text>
+        <text>{{config.landThermal}}</text>
+      </view>
+      <view>
+        <text>海洋热力</text>
+        <text>{{config.oceanThermal}}</text>
+      </view>
+      <view>
+        <text>大陆气压</text>
+        <text>{{config.landPressure}}</text>
+      </view>
+      <view>
+        <text>海洋气压</text>
+        <text>{{config.oceanPressure}}</text>
+      </view>
+      <view>
+        <text>降水</text>
+        <text>{{config.rainfallLevel}}</text>
+      </view>
+      <view>
+        <text>风的性质</text>
+        <text>{{config.windFeature}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="impact-grid">
+    <view wx:for="{{impactCards}}" wx:key="title" class="impact-card card">
+      <text>{{item.title}}</text>
+      <text>{{item.text}}</text>
+    </view>
+  </view>
+
+  <view class="nav-actions">
+    <button class="secondary-btn" bindtap="goCompare">冬夏对比</button>
+    <button class="primary-btn" bindtap="goQuiz">课堂测验</button>
+  </view>
+</view>

@@ -1,0 +1,39 @@
+<view class="page region-page">
+  <view class="page-title">先看空间背景</view>
+  <view class="page-subtitle">南亚季风不是只看风向，还要先把海洋、高山和纬线位置放进同一张图里。</view>
+
+  <view class="region-map card">
+    <view class="map-base">
+      <view class="region-ocean left"></view>
+      <view class="region-ocean right"></view>
+      <view class="region-land mainland"></view>
+      <view class="region-land peninsula"></view>
+      <view class="latitude tropic"></view>
+      <view class="latitude equator"></view>
+      <view class="mountain-band"></view>
+      <view
+        wx:for="{{features}}"
+        wx:key="name"
+        class="feature-label {{item.type}}"
+        style="left: {{item.x}}%; top: {{item.y}}%;"
+      >
+        {{item.name}}
+      </view>
+    </view>
+  </view>
+
+  <view class="question-card card">
+    <text class="section-title">思考问题</text>
+    <text class="question">南亚为什么容易受海洋和高山共同影响？</text>
+    <view class="answer-row">
+      <text>三面临海</text>
+      <text>一面高山</text>
+    </view>
+    <text class="summary">印度洋提供水汽，喜马拉雅山影响气流抬升和区域降水分布。</text>
+  </view>
+
+  <view class="nav-actions">
+    <button class="primary-btn" bindtap="goModel">进入季风模型</button>
+    <button class="secondary-btn" bindtap="goCompare">看冬夏对比</button>
+  </view>
+</view>

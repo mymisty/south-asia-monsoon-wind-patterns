@@ -1,0 +1,27 @@
+<view class="page compare-page">
+  <view class="page-title">冬夏季风对比</view>
+  <view class="page-subtitle">把气压、风向、降水和人类活动放在同一张表里，便于课堂归纳。</view>
+
+  <view class="compare-table card">
+    <view class="table-row table-head">
+      <text>项目</text>
+      <text>冬季风</text>
+      <text>夏季风</text>
+    </view>
+    <view wx:for="{{rows}}" wx:key="id" class="table-row">
+      <text>{{item.label}}</text>
+      <text>{{item.winter}}</text>
+      <text>{{item.summer}}</text>
+    </view>
+  </view>
+
+  <view class="summary-card card">
+    <text class="section-title">一句话总结</text>
+    <text class="summary-text">冬季大陆冷高压控制，风由陆地吹向海洋，干燥少雨；夏季大陆热低压吸引印度洋暖湿气流，形成西南季风，带来雨季和洪涝风险。</text>
+  </view>
+
+  <view class="nav-actions">
+    <button class="secondary-btn" bindtap="goModel">返回模型</button>
+    <button class="primary-btn" bindtap="goQuiz">开始测验</button>
+  </view>
+</view>

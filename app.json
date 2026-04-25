@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/region/region",
+    "pages/model/model",
+    "pages/compare/compare",
+    "pages/quiz/quiz"
+  ],
+  "window": {
+    "navigationBarTitleText": "南亚季风互动模型",
+    "navigationBarBackgroundColor": "#f7fbff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f4f7fb"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,44 @@
+<view class="page index-page">
+  <view class="hero">
+    <view class="hero-map" aria-hidden="true">
+      <view class="ocean ocean-left"></view>
+      <view class="ocean ocean-right"></view>
+      <view class="land mainland"></view>
+      <view class="land peninsula"></view>
+      <view class="ridge ridge-one"></view>
+      <view class="ridge ridge-two"></view>
+      <view class="wind-line wind-a"></view>
+      <view class="wind-line wind-b"></view>
+      <view class="rain-zone"></view>
+      <text class="map-note note-himalaya">喜马拉雅山脉</text>
+      <text class="map-note note-ocean">印度洋</text>
+    </view>
+
+    <view class="hero-content">
+      <text class="eyebrow">高中地理 · 选择性必修1</text>
+      <text class="hero-title">南亚季风互动模型</text>
+      <text class="hero-subtitle">从季节变化、海陆热力差异和气压差异，理解南亚旱雨季的形成。</text>
+      <view class="pill-row">
+        <text class="pill">海陆热力差异</text>
+        <text class="pill">风向变化</text>
+        <text class="pill">地形抬升降水</text>
+      </view>
+      <view class="hero-actions">
+        <button class="primary-btn" bindtap="goRegion">开始探究</button>
+        <button class="secondary-btn" bindtap="goModel">直接看模型</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="flow card">
+    <text class="section-title">课堂主线</text>
+    <view class="flow-chain">
+      <text>季节变化</text>
+      <text>海陆冷热</text>
+      <text>气压中心</text>
+      <text>风向变化</text>
+      <text>降水差异</text>
+      <text>农业与灾害</text>
+    </view>
+  </view>
+</view>

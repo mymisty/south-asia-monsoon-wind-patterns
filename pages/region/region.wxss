@@ -1,0 +1,162 @@
+.region-page {
+  padding-bottom: 48rpx;
+}
+
+.region-map {
+  margin-top: 28rpx;
+  padding: 16rpx;
+}
+
+.map-base {
+  position: relative;
+  overflow: hidden;
+  height: 470rpx;
+  border-radius: 12rpx;
+  background: #d8eef4;
+}
+
+.region-ocean,
+.region-land,
+.latitude,
+.mountain-band {
+  position: absolute;
+}
+
+.region-ocean.left {
+  left: -17%;
+  bottom: -8%;
+  width: 58%;
+  height: 50%;
+  border-radius: 50%;
+  background: rgba(69, 155, 190, 0.25);
+}
+
+.region-ocean.right {
+  right: -19%;
+  bottom: -6%;
+  width: 63%;
+  height: 52%;
+  border-radius: 50%;
+  background: rgba(58, 151, 188, 0.22);
+}
+
+.region-land.mainland {
+  left: 14%;
+  top: 8%;
+  width: 74%;
+  height: 33%;
+  border-radius: 42% 48% 22% 20%;
+  background: #e7d7b8;
+  transform: rotate(-4deg);
+}
+
+.region-land.peninsula {
+  left: 39%;
+  top: 30%;
+  width: 28%;
+  height: 40%;
+  border-radius: 44% 36% 56% 50%;
+  background: #dcc39d;
+  transform: rotate(9deg);
+}
+
+.latitude {
+  left: 0;
+  width: 100%;
+  height: 2rpx;
+  background: rgba(40, 92, 116, 0.22);
+}
+
+.latitude::after {
+  content: "";
+  position: absolute;
+  right: 16rpx;
+  top: -18rpx;
+  width: 70rpx;
+  height: 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.tropic {
+  top: 42%;
+}
+
+.equator {
+  top: 82%;
+}
+
+.mountain-band {
+  left: 35%;
+  top: 25%;
+  width: 42%;
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: #938271;
+  transform: rotate(2deg);
+  box-shadow: 0 13rpx 0 rgba(255, 255, 255, 0.48);
+}
+
+.feature-label {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  padding: 7rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.82);
+  color: #214456;
+  font-size: 21rpx;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.feature-label.water {
+  color: #1a668c;
+}
+
+.feature-label.mountain {
+  color: #6d5341;
+}
+
+.feature-label.line {
+  background: rgba(255, 255, 255, 0.68);
+  color: #506572;
+}
+
+.question-card {
+  margin-top: 26rpx;
+  padding: 28rpx;
+}
+
+.question {
+  display: block;
+  margin-top: 20rpx;
+  color: #1d3b50;
+  font-size: 31rpx;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.answer-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.answer-row text {
+  flex: 1;
+  padding: 20rpx 14rpx;
+  border-radius: 12rpx;
+  background: #eaf5ee;
+  color: #1e6b5b;
+  text-align: center;
+  font-weight: 800;
+}
+
+.summary {
+  display: block;
+  margin-top: 22rpx;
+  color: #5f7180;
+  font-size: 25rpx;
+  line-height: 1.6;
+}
