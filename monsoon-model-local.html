@@ -1532,6 +1532,55 @@
       ctx.fill();
     }
 
+    const WIND_FLOW_STYLES = {
+      winter: {
+        lineWidth: 9,
+        lineAlpha: 0.62,
+        headSize: 27,
+        flowColor: '#9ed4ff',
+        flowCount: 4,
+        flowSpeed: 0.00024,
+        flowHeadSize: 16,
+        flowTail: 42
+      },
+      summer: {
+        lineWidth: 10,
+        lineAlpha: 0.66,
+        headSize: 29,
+        flowColor: '#ffd0a8',
+        flowCount: 5,
+        flowSpeed: 0.00032,
+        flowHeadSize: 17,
+        flowTail: 48
+      },
+      belt: {
+        lineWidth: 8,
+        lineAlpha: 0.58,
+        headSize: 25,
+        flowColor: '#e4c7ff',
+        flowCount: 4,
+        flowSpeed: 0.00026,
+        flowHeadSize: 15,
+        flowTail: 38
+      }
+    };
+
+    function drawMovingArrowMarker(x, y, angle, style, progress) {
+      const fade = Math.sin(Math.PI * progress);
+      const tail = style.flowTail * (0.68 + 0.22 * fade);
+      ctx.save();
+      ctx.globalAlpha = 0.26 + 0.54 * fade;
+      ctx.strokeStyle = style.flowColor;
+      ctx.lineWidth = Math.max(3, style.lineWidth * 0.34);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
+      ctx.lineTo(x - Math.cos(angle) * style.flowHeadSize * 0.6, y - Math.sin(angle) * style.flowHeadSize * 0.6);
+      ctx.stroke();
+      drawArrowHead(x, y, angle, style.flowColor, style.flowHeadSize * (0.88 + 0.16 * fade));
+      ctx.restore();
+    }
+
     function drawArrow(start, end, color, label) {
       const x1 = n(start[0], canvas.width);
       const y1 = n(start[1], canvas.height);
@@ -1553,38 +1602,24 @@
       const start = project(startGeo[0], startGeo[1]);
       const end = project(endGeo[0], endGeo[1]);
       const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const style = state.season === 'summer' ? WIND_FLOW_STYLES.summer : WIND_FLOW_STYLES.winter;
 
       ctx.save();
       ctx.lineCap = 'round';
       ctx.strokeStyle = color;
-      ctx.globalAlpha = 0.58;
-      ctx.lineWidth = 12;
+      ctx.globalAlpha = style.lineAlpha;
+      ctx.lineWidth = style.lineWidth;
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
-      ctx.globalAlpha = state.season === 'summer' ? 0.58 : 0.34;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.86)';
-      ctx.lineWidth = state.season === 'summer' ? 5 : 3.5;
-      ctx.setLineDash([34, 24]);
-      ctx.lineDashOffset = -time * (state.season === 'summer' ? 0.11 : 0.065);
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
-      drawArrowHead(end.x, end.y, angle, color, 34);
+      drawArrowHead(end.x, end.y, angle, color, style.headSize);
 
-      for (let i = 0; i < 4; i += 1) {
-        const t = ((time * 0.00022 + offset + i * 0.22) % 1 + 1) % 1;
+      for (let i = 0; i < style.flowCount; i += 1) {
+        const t = ((time * style.flowSpeed + offset + i / style.flowCount) % 1 + 1) % 1;
         const p = lerpPoint(start, end, t);
-        ctx.globalAlpha = 0.22 + 0.55 * Math.sin(Math.PI * t);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 9 + 4 * Math.sin(Math.PI * t), 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        drawArrowHead(p.x + Math.cos(angle) * 15, p.y + Math.sin(angle) * 15, angle, color, 18);
+        drawMovingArrowMarker(p.x, p.y, angle, style, t);
       }
       ctx.restore();
 
@@ -1607,40 +1642,26 @@
       const control = project(controlGeo[0], controlGeo[1]);
       const end = project(endGeo[0], endGeo[1]);
       const angle = Math.atan2(end.y - control.y, end.x - control.x);
+      const style = WIND_FLOW_STYLES.belt;
 
       ctx.save();
       ctx.lineCap = 'round';
       ctx.strokeStyle = color;
-      ctx.globalAlpha = 0.62;
-      ctx.lineWidth = 10;
+      ctx.globalAlpha = style.lineAlpha;
+      ctx.lineWidth = style.lineWidth;
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
       ctx.stroke();
-      ctx.globalAlpha = 0.56;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.84)';
-      ctx.lineWidth = 4;
-      ctx.setLineDash([30, 20]);
-      ctx.lineDashOffset = -time * 0.1;
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
-      drawArrowHead(end.x, end.y, angle, color, 32);
+      drawArrowHead(end.x, end.y, angle, color, style.headSize);
 
-      for (let i = 0; i < 5; i += 1) {
-        const t = ((time * 0.00018 + offset + i * 0.18) % 1 + 1) % 1;
+      for (let i = 0; i < style.flowCount; i += 1) {
+        const t = ((time * style.flowSpeed + offset + i / style.flowCount) % 1 + 1) % 1;
         const p = quadraticPoint(start, control, end, t);
         const ahead = quadraticPoint(start, control, end, Math.min(1, t + 0.03));
-        const particleAngle = Math.atan2(ahead.y - p.y, ahead.x - p.x);
-        ctx.globalAlpha = 0.24 + 0.52 * Math.sin(Math.PI * t);
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-        ctx.fill();
-        drawArrowHead(p.x + Math.cos(particleAngle) * 12, p.y + Math.sin(particleAngle) * 12, particleAngle, color, 16);
+        const markerAngle = Math.atan2(ahead.y - p.y, ahead.x - p.x);
+        drawMovingArrowMarker(p.x, p.y, markerAngle, style, t);
       }
       ctx.restore();
 
@@ -1719,23 +1740,16 @@
       ctx.fillText(isSummer ? '夏季图例 · 暖湿多雨' : '冬季图例 · 干燥少雨', x + 22, y + 28);
 
       const lineY = y + 66;
+      const legendStyle = isSummer ? WIND_FLOW_STYLES.summer : WIND_FLOW_STYLES.winter;
       ctx.strokeStyle = windColor;
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 7;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(x + 28, lineY);
       ctx.lineTo(x + 92, lineY);
       ctx.stroke();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.86)';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([14, 10]);
-      ctx.lineDashOffset = -time * 0.06;
-      ctx.beginPath();
-      ctx.moveTo(x + 28, lineY);
-      ctx.lineTo(x + 92, lineY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      drawArrowHead(x + 92, lineY, 0, windColor, 18);
+      drawMovingArrowMarker(x + 63 + Math.sin(time * 0.004) * 10, lineY, 0, legendStyle, 0.56);
+      drawArrowHead(x + 92, lineY, 0, windColor, 16);
 
       ctx.fillStyle = '#314d5d';
       ctx.font = '700 20px "Microsoft YaHei", sans-serif';
