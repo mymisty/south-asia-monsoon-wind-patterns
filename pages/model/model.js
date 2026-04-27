@@ -16,60 +16,58 @@ function setStroke(ctx, color, width) {
 const WIND_ANIMATION_INTERVAL = 33
 const WIND_ANIMATION_MAX_DELTA = 50
 
+// Arrow language:
+// - Fluent-like simple geometric arrowheads (clean, high contrast).
+// - NASA-style vector field repetition: multiple small arrows flowing along one path.
 const WIND_ARROW_STYLES = {
   winterMain: {
     color: '#376da4',
-    particleColor: '#9ed4ff',
     lineWidth: 5.4,
     alpha: 0.9,
-    particleSize: 4.2,
-    particles: 6,
-    speed: 0.00185,
-    tailLength: 0.07,
+    markers: 4,
+    speed: 0.00145,
+    markerLength: 12,
+    markerHead: 6,
     labelSize: 13
   },
   winterSecondary: {
     color: '#376da4',
-    particleColor: '#b8def8',
     lineWidth: 3.4,
     alpha: 0.54,
-    particleSize: 2.9,
-    particles: 4,
-    speed: 0.00135,
-    tailLength: 0.06,
+    markers: 3,
+    speed: 0.0011,
+    markerLength: 9,
+    markerHead: 4.8,
     labelSize: 11
   },
   summerMain: {
     color: '#df6a3f',
-    particleColor: '#ffd0a8',
     lineWidth: 5.8,
     alpha: 0.92,
-    particleSize: 4.6,
-    particles: 7,
-    speed: 0.0021,
-    tailLength: 0.075,
+    markers: 5,
+    speed: 0.00175,
+    markerLength: 12.5,
+    markerHead: 6.2,
     labelSize: 13
   },
   summerSecondary: {
     color: '#df6a3f',
-    particleColor: '#ffd9ba',
     lineWidth: 3.5,
     alpha: 0.58,
-    particleSize: 3,
-    particles: 4,
-    speed: 0.0016,
-    tailLength: 0.065,
+    markers: 3,
+    speed: 0.00125,
+    markerLength: 9.5,
+    markerHead: 5,
     labelSize: 11
   },
   windBelt: {
     color: '#9a5ab8',
-    particleColor: '#e5c6ff',
     lineWidth: 3.6,
     alpha: 0.62,
-    particleSize: 3.2,
-    particles: 5,
-    speed: 0.0017,
-    tailLength: 0.065,
+    markers: 4,
+    speed: 0.0013,
+    markerLength: 10,
+    markerHead: 5.2,
     labelSize: 11
   }
 }
@@ -248,21 +246,27 @@ function drawWindArrow(ctx, width, height, path, style, time) {
   ctx.stroke()
 
   const phase = ((time || 0) * style.speed + (path.offset || 0)) % 1
-  for (let i = 0; i < style.particles; i += 1) {
-    const t = (phase + i / style.particles) % 1
+  const markers = style.markers || 3
+  for (let i = 0; i < markers; i += 1) {
+    const t = (phase + i / markers) % 1
     const point = quadraticPoint(start, control, end, t)
-    const tail = quadraticPoint(start, control, end, Math.max(0, t - (style.tailLength || 0.055)))
-    ctx.setGlobalAlpha(0.32 + 0.36 * Math.sin(Math.PI * t))
-    setStroke(ctx, style.particleColor, Math.max(1.2, lineWidth * 0.34))
+    const prev = quadraticPoint(start, control, end, Math.max(0, t - 0.02))
+    const markerAngle = Math.atan2(point.y - prev.y, point.x - prev.x)
+    const markerLength = style.markerLength || Math.max(8, lineWidth * 2.1)
+    const markerHead = style.markerHead || Math.max(4.2, lineWidth * 1.1)
+    const fade = Math.sin(Math.PI * t)
+
+    ctx.setGlobalAlpha((0.14 + 0.8 * fade * fade) * style.alpha)
+    setStroke(ctx, style.color, Math.max(1.1, lineWidth * 0.42))
     ctx.beginPath()
-    ctx.moveTo(tail.x, tail.y)
+    ctx.moveTo(
+      point.x - Math.cos(markerAngle) * markerLength,
+      point.y - Math.sin(markerAngle) * markerLength
+    )
     ctx.lineTo(point.x, point.y)
     ctx.stroke()
-    ctx.setGlobalAlpha(0.44 + 0.34 * Math.sin(Math.PI * t))
-    setFill(ctx, style.particleColor)
-    ctx.beginPath()
-    ctx.arc(point.x, point.y, style.particleSize, 0, Math.PI * 2)
-    ctx.fill()
+
+    drawArrowHead(ctx, point.x, point.y, markerAngle, style.color, markerHead)
   }
 
   ctx.setGlobalAlpha(1)
