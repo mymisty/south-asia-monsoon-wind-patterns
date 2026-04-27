@@ -1451,9 +1451,12 @@
       if (animationFrameId !== null) {
         return;
       }
+      if (document.hidden) {
+        return;
+      }
 
       const loop = (time) => {
-        if (state.page === 'model') {
+        if (state.page === 'model' && !document.hidden) {
           if (time - lastAnimationPaint > 33) {
             lastAnimationPaint = time;
             drawModel(time, false);
@@ -1532,101 +1535,242 @@
       ctx.fill();
     }
 
-    const WIND_FLOW_STYLES = {
-      winter: {
+    const WIND_ARROW_STYLES = {
+      winterMain: {
+        color: '#376da4',
         lineWidth: 9,
-        lineAlpha: 0.62,
-        headSize: 27,
-        flowColor: '#9ed4ff',
-        flowCount: 4,
-        flowSpeed: 0.00024,
-        flowHeadSize: 16,
-        flowTail: 42
+        alpha: 0.68,
+        markerColor: '#9ed4ff',
+        markers: 4,
+        speed: 0.00025,
+        markerLength: 44,
+        markerHead: 16,
+        endHead: 27,
+        labelSize: 27
       },
-      summer: {
+      winterSecondary: {
+        color: '#376da4',
+        lineWidth: 6,
+        alpha: 0.42,
+        markerColor: '#b8def8',
+        markers: 3,
+        speed: 0.0002,
+        markerLength: 34,
+        markerHead: 13,
+        endHead: 21,
+        labelSize: 22
+      },
+      summerMain: {
+        color: '#df6a3f',
         lineWidth: 10,
-        lineAlpha: 0.66,
-        headSize: 29,
-        flowColor: '#ffd0a8',
-        flowCount: 5,
-        flowSpeed: 0.00032,
-        flowHeadSize: 17,
-        flowTail: 48
+        alpha: 0.72,
+        markerColor: '#ffd0a8',
+        markers: 5,
+        speed: 0.00033,
+        markerLength: 48,
+        markerHead: 17,
+        endHead: 29,
+        labelSize: 27
+      },
+      summerSecondary: {
+        color: '#df6a3f',
+        lineWidth: 6,
+        alpha: 0.46,
+        markerColor: '#ffd9ba',
+        markers: 3,
+        speed: 0.00025,
+        markerLength: 36,
+        markerHead: 13,
+        endHead: 21,
+        labelSize: 22
       },
       belt: {
-        lineWidth: 8,
-        lineAlpha: 0.58,
-        headSize: 25,
-        flowColor: '#e4c7ff',
-        flowCount: 4,
-        flowSpeed: 0.00026,
-        flowHeadSize: 15,
-        flowTail: 38
+        color: '#9a5ab8',
+        lineWidth: 7,
+        alpha: 0.52,
+        markerColor: '#e4c7ff',
+        markers: 4,
+        speed: 0.00027,
+        markerLength: 36,
+        markerHead: 14,
+        endHead: 23,
+        labelSize: 22
       }
     };
 
-    function drawMovingArrowMarker(x, y, angle, style, progress) {
-      const fade = Math.sin(Math.PI * progress);
-      const tail = style.flowTail * (0.68 + 0.22 * fade);
+    const SEASON_WIND_PATHS = {
+      winter: [
+        {
+          role: 'main',
+          label: '东北季风',
+          labelGeo: [73, 20.5],
+          labelAlign: 'right',
+          start: [90, 33],
+          control: [82, 28],
+          end: [73, 18],
+          offset: 0.08
+        },
+        {
+          role: 'secondary',
+          start: [82, 29],
+          control: [73, 22],
+          end: [66, 12],
+          offset: 0.38
+        },
+        {
+          role: 'secondary',
+          start: [96, 27],
+          control: [91, 19],
+          end: [88, 12],
+          offset: 0.62
+        }
+      ],
+      summer: [
+        {
+          role: 'main',
+          label: '西南季风',
+          labelGeo: [78, 13],
+          labelAlign: 'right',
+          start: [73, -4],
+          control: [77, 9],
+          end: [84, 22],
+          offset: 0.04
+        },
+        {
+          role: 'secondary',
+          label: '阿拉伯海分支',
+          labelGeo: [64, 10],
+          labelAlign: 'left',
+          start: [55, 0],
+          control: [61, 8],
+          end: [72, 20],
+          offset: 0.31
+        },
+        {
+          role: 'secondary',
+          label: '孟加拉湾分支',
+          labelGeo: [93, 17],
+          labelAlign: 'left',
+          start: [86, 0],
+          control: [90, 12],
+          end: [91, 25],
+          offset: 0.56
+        }
+      ]
+    };
+
+    const WIND_BELT_PATH = {
+      label: '东南信风越赤道后右偏',
+      labelGeo: [63, 6],
+      labelAlign: 'left',
+      start: [103, -4.5],
+      control: [82, -1],
+      end: [68, 10],
+      offset: 0.12
+    };
+
+    function pathPointGeo(point) {
+      return project(point[0], point[1]);
+    }
+
+    function drawLabelTag(text, x, y, color, size, align = 'left') {
+      const paddingX = 15;
+      const paddingY = 9;
+
       ctx.save();
-      ctx.globalAlpha = 0.26 + 0.54 * fade;
-      ctx.strokeStyle = style.flowColor;
-      ctx.lineWidth = Math.max(3, style.lineWidth * 0.34);
+      ctx.font = `800 ${size}px "Microsoft YaHei", sans-serif`;
+      const width = ctx.measureText(text).width + paddingX * 2;
+      const height = size + paddingY * 2;
+      const left = align === 'right' ? x - width : align === 'center' ? x - width / 2 : x;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.74)';
+      ctx.strokeStyle = 'rgba(34, 72, 94, 0.12)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(left, y - height / 2, width, height, 10);
+      } else {
+        ctx.rect(left, y - height / 2, width, height);
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      drawLabel(text, left + (align === 'right' ? width - paddingX : paddingX), y, color, size, align === 'right' ? 'right' : 'left');
+    }
+
+    function drawArrowMarker(x, y, angle, style, progress) {
+      const fade = Math.sin(Math.PI * progress);
+      ctx.save();
+      ctx.globalAlpha = (0.18 + 0.74 * fade * fade) * style.alpha;
+      ctx.strokeStyle = style.markerColor;
+      ctx.lineWidth = Math.max(3, style.lineWidth * 0.38);
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
-      ctx.lineTo(x - Math.cos(angle) * style.flowHeadSize * 0.6, y - Math.sin(angle) * style.flowHeadSize * 0.6);
+      ctx.moveTo(
+        x - Math.cos(angle) * style.markerLength,
+        y - Math.sin(angle) * style.markerLength
+      );
+      ctx.lineTo(x, y);
       ctx.stroke();
-      drawArrowHead(x, y, angle, style.flowColor, style.flowHeadSize * (0.88 + 0.16 * fade));
+      drawArrowHead(x, y, angle, style.markerColor, style.markerHead);
       ctx.restore();
     }
 
-    function drawArrow(start, end, color, label) {
-      const x1 = n(start[0], canvas.width);
-      const y1 = n(start[1], canvas.height);
-      const x2 = n(end[0], canvas.width);
-      const y2 = n(end[1], canvas.height);
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 14;
-      ctx.stroke();
-      drawArrowHead(x2, y2, angle, color, 36);
-      if (label) drawLabel(label, (x1 + x2) / 2, (y1 + y2) / 2 - 38, color, 30);
-    }
-
-    function drawAnimatedArrowGeo(startGeo, endGeo, color, label, time, offset = 0) {
-      const start = project(startGeo[0], startGeo[1]);
-      const end = project(endGeo[0], endGeo[1]);
-      const angle = Math.atan2(end.y - start.y, end.x - start.x);
-      const style = state.season === 'summer' ? WIND_FLOW_STYLES.summer : WIND_FLOW_STYLES.winter;
+    function drawWindArrow(path, style, time) {
+      const start = pathPointGeo(path.start);
+      const control = pathPointGeo(path.control);
+      const end = pathPointGeo(path.end);
+      const endTangent = quadraticPoint(start, control, end, 0.97);
+      const angle = Math.atan2(end.y - endTangent.y, end.x - endTangent.x);
 
       ctx.save();
       ctx.lineCap = 'round';
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = style.lineAlpha;
+      ctx.lineJoin = 'round';
+      ctx.globalAlpha = style.alpha * 0.18;
+      ctx.strokeStyle = style.color;
+      ctx.lineWidth = style.lineWidth + 7;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+      ctx.stroke();
+
+      ctx.globalAlpha = style.alpha;
       ctx.lineWidth = style.lineWidth;
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
+      ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
       ctx.stroke();
-      ctx.globalAlpha = 1;
-      drawArrowHead(end.x, end.y, angle, color, style.headSize);
 
-      for (let i = 0; i < style.flowCount; i += 1) {
-        const t = ((time * style.flowSpeed + offset + i / style.flowCount) % 1 + 1) % 1;
-        const p = lerpPoint(start, end, t);
-        drawMovingArrowMarker(p.x, p.y, angle, style, t);
+      for (let i = 0; i < style.markers; i += 1) {
+        const t = ((time * style.speed + path.offset + i / style.markers) % 1 + 1) % 1;
+        const point = quadraticPoint(start, control, end, t);
+        const prev = quadraticPoint(start, control, end, Math.max(0, t - 0.025));
+        const markerAngle = Math.atan2(point.y - prev.y, point.x - prev.x);
+        drawArrowMarker(point.x, point.y, markerAngle, style, t);
       }
+
+      ctx.globalAlpha = 1;
+      drawArrowHead(end.x, end.y, angle, style.color, style.endHead);
       ctx.restore();
 
-      if (label) {
-        const mid = lerpPoint(start, end, 0.52);
-        drawLabel(label, mid.x, mid.y - 34, color, 30);
+      if (path.label) {
+        const labelPoint = pathPointGeo(path.labelGeo);
+        drawLabelTag(path.label, labelPoint.x, labelPoint.y, style.color, style.labelSize, path.labelAlign);
       }
+    }
+
+    function drawWindLayer(time) {
+      const paths = SEASON_WIND_PATHS[state.season];
+      const prefix = state.season === 'summer' ? 'summer' : 'winter';
+
+      paths
+        .filter((path) => path.role !== 'main')
+        .forEach((path) => drawWindArrow(path, WIND_ARROW_STYLES[`${prefix}Secondary`], time));
+
+      paths
+        .filter((path) => path.role === 'main')
+        .forEach((path) => drawWindArrow(path, WIND_ARROW_STYLES[`${prefix}Main`], time));
     }
 
     function quadraticPoint(start, control, end, t) {
@@ -1635,59 +1779,6 @@
         x: one * one * start.x + 2 * one * t * control.x + t * t * end.x,
         y: one * one * start.y + 2 * one * t * control.y + t * t * end.y
       };
-    }
-
-    function drawAnimatedCurveGeo(startGeo, controlGeo, endGeo, color, label, time, offset = 0) {
-      const start = project(startGeo[0], startGeo[1]);
-      const control = project(controlGeo[0], controlGeo[1]);
-      const end = project(endGeo[0], endGeo[1]);
-      const angle = Math.atan2(end.y - control.y, end.x - control.x);
-      const style = WIND_FLOW_STYLES.belt;
-
-      ctx.save();
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = style.lineAlpha;
-      ctx.lineWidth = style.lineWidth;
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-      drawArrowHead(end.x, end.y, angle, color, style.headSize);
-
-      for (let i = 0; i < style.flowCount; i += 1) {
-        const t = ((time * style.flowSpeed + offset + i / style.flowCount) % 1 + 1) % 1;
-        const p = quadraticPoint(start, control, end, t);
-        const ahead = quadraticPoint(start, control, end, Math.min(1, t + 0.03));
-        const markerAngle = Math.atan2(ahead.y - p.y, ahead.x - p.x);
-        drawMovingArrowMarker(p.x, p.y, markerAngle, style, t);
-      }
-      ctx.restore();
-
-      if (label) {
-        const mid = quadraticPoint(start, control, end, 0.48);
-        drawLabel(label, mid.x, mid.y + 42, color, 27);
-      }
-    }
-
-    function drawCurvedArrow(start, control, end, color, label) {
-      const x1 = n(start[0], canvas.width);
-      const y1 = n(start[1], canvas.height);
-      const cx = n(control[0], canvas.width);
-      const cy = n(control[1], canvas.height);
-      const x2 = n(end[0], canvas.width);
-      const y2 = n(end[1], canvas.height);
-      const angle = Math.atan2(y2 - cy, x2 - cx);
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo(cx, cy, x2, y2);
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 12;
-      ctx.stroke();
-      drawArrowHead(x2, y2, angle, color, 34);
-      drawLabel(label, n(0.36, canvas.width), n(0.72, canvas.height), color, 28);
     }
 
     function drawPressure(x, y, type, caption) {
@@ -1740,7 +1831,7 @@
       ctx.fillText(isSummer ? '夏季图例 · 暖湿多雨' : '冬季图例 · 干燥少雨', x + 22, y + 28);
 
       const lineY = y + 66;
-      const legendStyle = isSummer ? WIND_FLOW_STYLES.summer : WIND_FLOW_STYLES.winter;
+      const legendStyle = isSummer ? WIND_ARROW_STYLES.summerMain : WIND_ARROW_STYLES.winterMain;
       ctx.strokeStyle = windColor;
       ctx.lineWidth = 7;
       ctx.lineCap = 'round';
@@ -1748,7 +1839,7 @@
       ctx.moveTo(x + 28, lineY);
       ctx.lineTo(x + 92, lineY);
       ctx.stroke();
-      drawMovingArrowMarker(x + 63 + Math.sin(time * 0.004) * 10, lineY, 0, legendStyle, 0.56);
+      drawArrowMarker(x + 63 + Math.sin(time * 0.004) * 10, lineY, 0, legendStyle, 0.56);
       drawArrowHead(x + 92, lineY, 0, windColor, 16);
 
       ctx.fillStyle = '#314d5d';
@@ -2089,17 +2180,13 @@
       if (state.season === 'winter') {
         drawPressureGeo(75, 36, config.landPressure, '亚洲大陆冷高压控制');
         drawPressureGeo(66, 1.5, config.oceanPressure, '印度洋相对低压');
-        drawAnimatedArrowGeo([88, 32], [75, 20], '#376da4', '东北季风', time, 0.1);
-        drawAnimatedArrowGeo([80, 28], [66, 12], '#376da4', '', time, 0.35);
-        drawAnimatedArrowGeo([93, 27], [88, 12], '#376da4', '', time, 0.58);
+        drawWindLayer(time);
       } else {
         drawPressureGeo(74, 29, config.landPressure, '大陆热低压');
         drawPressureGeo(54, 0.2, config.oceanPressure, '南印度洋高压方向');
-        drawAnimatedArrowGeo([55, 0], [72, 20], '#df6a3f', '阿拉伯海分支', time, 0.04);
-        drawAnimatedArrowGeo([76, -3], [84, 22], '#df6a3f', '西南季风', time, 0.28);
-        drawAnimatedArrowGeo([86, 0], [91, 25], '#df6a3f', '孟加拉湾分支', time, 0.52);
+        drawWindLayer(time);
         if (state.showWindBelt) {
-          drawAnimatedCurveGeo([103, -4.5], [82, -1], [68, 10], '#9a5ab8', '东南信风越赤道后右偏', time, 0.12);
+          drawWindArrow(WIND_BELT_PATH, WIND_ARROW_STYLES.belt, time);
         }
       }
       drawLabel(config.windFeature, n(0.62, canvas.width), n(0.12, canvas.height), state.season === 'summer' ? '#ffe4d5' : '#dff2ff', 36);
@@ -2263,6 +2350,17 @@
 
     window.addEventListener('resize', () => {
       if (state.page === 'model') drawModel();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopModelAnimation();
+        return;
+      }
+      if (state.page === 'model') {
+        startModelAnimation();
+        drawModel();
+      }
     });
 
     syncControlsFromState();
