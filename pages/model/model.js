@@ -33,6 +33,14 @@ function drawPolygon(ctx, points, width, height, fill, stroke) {
   }
 }
 
+function drawSoftPolygon(ctx, points, width, height, fill, alpha) {
+  ctx.setGlobalAlpha(alpha)
+  drawPolygon(ctx, points, width, height, fill, null)
+  ctx.setGlobalAlpha(alpha * 0.58)
+  drawPolygon(ctx, points.map(([x, y]) => [x + (0.5 - x) * 0.018, y + (0.5 - y) * 0.018]), width, height, fill, null)
+  ctx.setGlobalAlpha(1)
+}
+
 function drawLabel(ctx, text, x, y, color, size, align) {
   ctx.setFontSize(size)
   ctx.setTextAlign(align || 'center')
@@ -51,19 +59,33 @@ function drawArrowHead(ctx, x, y, angle, color, size) {
   ctx.fill()
 }
 
-function drawArrow(ctx, width, height, start, end, color, label) {
+function drawArrow(ctx, width, height, start, end, color, label, time, offset, strength) {
   const x1 = n(start[0], width)
   const y1 = n(start[1], height)
   const x2 = n(end[0], width)
   const y2 = n(end[1], height)
   const angle = Math.atan2(y2 - y1, x2 - x1)
+  const flowStrength = strength || 1
 
   ctx.beginPath()
   ctx.moveTo(x1, y1)
   ctx.lineTo(x2, y2)
   ctx.setLineCap('round')
-  setStroke(ctx, color, 5)
+  setStroke(ctx, color, 5 + flowStrength)
   ctx.stroke()
+
+  const phase = ((time || 0) * (0.0015 + flowStrength * 0.00045) + (offset || 0)) % 1
+  for (let i = 0; i < 4; i += 1) {
+    const t = (phase + i * 0.25) % 1
+    const px = x1 + (x2 - x1) * t
+    const py = y1 + (y2 - y1) * t
+    ctx.setGlobalAlpha(0.22 + 0.52 * Math.sin(Math.PI * t))
+    setFill(ctx, '#ffffff')
+    ctx.beginPath()
+    ctx.arc(px, py, 2.6 + flowStrength * 1.6, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.setGlobalAlpha(1)
   drawArrowHead(ctx, x2, y2, angle, color, Math.max(13, width * 0.028))
 
   if (label) {
@@ -71,7 +93,15 @@ function drawArrow(ctx, width, height, start, end, color, label) {
   }
 }
 
-function drawCurvedArrow(ctx, width, height, start, control, end, color, label) {
+function quadraticPoint(start, control, end, t) {
+  const one = 1 - t
+  return {
+    x: one * one * start.x + 2 * one * t * control.x + t * t * end.x,
+    y: one * one * start.y + 2 * one * t * control.y + t * t * end.y
+  }
+}
+
+function drawCurvedArrow(ctx, width, height, start, control, end, color, label, time) {
   const x1 = n(start[0], width)
   const y1 = n(start[1], height)
   const cx = n(control[0], width)
@@ -79,6 +109,9 @@ function drawCurvedArrow(ctx, width, height, start, control, end, color, label) 
   const x2 = n(end[0], width)
   const y2 = n(end[1], height)
   const angle = Math.atan2(y2 - cy, x2 - cx)
+  const pathStart = { x: x1, y: y1 }
+  const pathControl = { x: cx, y: cy }
+  const pathEnd = { x: x2, y: y2 }
 
   ctx.beginPath()
   ctx.moveTo(x1, y1)
@@ -86,6 +119,18 @@ function drawCurvedArrow(ctx, width, height, start, control, end, color, label) 
   ctx.setLineCap('round')
   setStroke(ctx, color, 4)
   ctx.stroke()
+
+  const phase = ((time || 0) * 0.0014) % 1
+  for (let i = 0; i < 5; i += 1) {
+    const t = (phase + i * 0.2) % 1
+    const point = quadraticPoint(pathStart, pathControl, pathEnd, t)
+    ctx.setGlobalAlpha(0.24 + 0.5 * Math.sin(Math.PI * t))
+    setFill(ctx, '#ffffff')
+    ctx.beginPath()
+    ctx.arc(point.x, point.y, 3.4, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.setGlobalAlpha(1)
   drawArrowHead(ctx, x2, y2, angle, color, Math.max(12, width * 0.026))
   drawLabel(ctx, label, n(0.36, width), n(0.72, height), color, 12, 'center')
 }
@@ -109,21 +154,13 @@ function drawPressure(ctx, width, height, x, y, type, caption) {
 
 function drawRain(ctx, width, height, season) {
   if (season === 'summer') {
-    ctx.setGlobalAlpha(0.28)
-    drawPolygon(ctx, [
-      [0.52, 0.31],
-      [0.78, 0.35],
-      [0.84, 0.52],
-      [0.68, 0.66],
-      [0.50, 0.58]
-    ], width, height, '#248bd4', null)
-    drawPolygon(ctx, [
-      [0.31, 0.47],
-      [0.43, 0.58],
-      [0.39, 0.72],
-      [0.28, 0.63]
-    ], width, height, '#248bd4', null)
-    ctx.setGlobalAlpha(1)
+    [
+      { fill: '#9ed7f2', alpha: 0.16, points: [[0.28, 0.34], [0.78, 0.34], [0.88, 0.53], [0.72, 0.72], [0.37, 0.68], [0.24, 0.52]] },
+      { fill: '#2c93d8', alpha: 0.24, points: [[0.52, 0.31], [0.78, 0.35], [0.84, 0.52], [0.68, 0.66], [0.50, 0.58]] },
+      { fill: '#2c93d8', alpha: 0.23, points: [[0.31, 0.47], [0.43, 0.58], [0.39, 0.72], [0.28, 0.63]] },
+      { fill: '#0f5fa9', alpha: 0.31, points: [[0.60, 0.38], [0.82, 0.42], [0.78, 0.57], [0.62, 0.60]] },
+      { fill: '#0f5fa9', alpha: 0.28, points: [[0.34, 0.50], [0.43, 0.58], [0.39, 0.67], [0.31, 0.62]] }
+    ].forEach((band) => drawSoftPolygon(ctx, band.points, width, height, band.fill, band.alpha))
 
     for (let i = 0; i < 11; i += 1) {
       const x = n(0.55 + (i % 6) * 0.045, width)
@@ -136,14 +173,19 @@ function drawRain(ctx, width, height, season) {
     }
     drawLabel(ctx, '迎风坡降水增强', n(0.72, width), n(0.59, height), '#1b6f9e', 13, 'center')
   } else {
-    ctx.setGlobalAlpha(0.18)
-    drawPolygon(ctx, [
-      [0.42, 0.40],
-      [0.71, 0.42],
-      [0.73, 0.68],
-      [0.42, 0.72],
-      [0.30, 0.58]
-    ], width, height, '#b98254', null)
+    [
+      { fill: '#e3c49f', alpha: 0.13, points: [[0.31, 0.36], [0.76, 0.39], [0.79, 0.68], [0.43, 0.76], [0.26, 0.58]] },
+      { fill: '#c08455', alpha: 0.17, points: [[0.42, 0.40], [0.71, 0.42], [0.73, 0.68], [0.42, 0.72], [0.30, 0.58]] },
+      { fill: '#9f613d', alpha: 0.14, points: [[0.47, 0.48], [0.66, 0.49], [0.67, 0.62], [0.50, 0.66], [0.39, 0.57]] }
+    ].forEach((band) => drawSoftPolygon(ctx, band.points, width, height, band.fill, band.alpha))
+    ctx.setGlobalAlpha(0.26)
+    setStroke(ctx, '#8f5a39', 1)
+    for (let i = 0; i < 7; i += 1) {
+      ctx.beginPath()
+      ctx.moveTo(n(0.34 + i * 0.055, width), n(0.44, height))
+      ctx.lineTo(n(0.43 + i * 0.055, width), n(0.68, height))
+      ctx.stroke()
+    }
     ctx.setGlobalAlpha(1)
     drawLabel(ctx, '干燥少雨', n(0.64, width), n(0.61, height), '#9b623f', 14, 'center')
   }
@@ -258,6 +300,58 @@ function getWindBeltMeta(season) {
   }
 }
 
+function drawLegend(ctx, width, height, season) {
+  const isSummer = season === 'summer'
+  const panelWidth = Math.min(176, width * 0.52)
+  const panelHeight = 90
+  const x = width - panelWidth - 10
+  const y = 10
+  const windColor = isSummer ? '#df6a3f' : '#376da4'
+
+  ctx.setGlobalAlpha(0.88)
+  setFill(ctx, '#ffffff')
+  ctx.fillRect(x, y, panelWidth, panelHeight)
+  ctx.setGlobalAlpha(1)
+  setStroke(ctx, 'rgba(34, 72, 94, 0.14)', 1)
+  ctx.beginPath()
+  ctx.rect(x, y, panelWidth, panelHeight)
+  ctx.stroke()
+
+  drawLabel(ctx, isSummer ? '夏季图例 · 暖湿' : '冬季图例 · 干燥', x + 12, y + 14, '#17364b', 11, 'left')
+
+  const windY = y + 36
+  setStroke(ctx, windColor, 4)
+  ctx.setLineCap('round')
+  ctx.beginPath()
+  ctx.moveTo(x + 14, windY)
+  ctx.lineTo(x + 48, windY)
+  ctx.stroke()
+  drawArrowHead(ctx, x + 48, windY, 0, windColor, 9)
+  drawLabel(ctx, isSummer ? '西南季风' : '东北季风', x + 62, windY, '#314d5d', 10, 'left')
+
+  const rainY = y + 58
+  setFill(ctx, isSummer ? '#9ed7f2' : '#e3c49f')
+  ctx.fillRect(x + 14, rainY - 6, 14, 12)
+  setFill(ctx, isSummer ? '#2c93d8' : '#c08455')
+  ctx.fillRect(x + 28, rainY - 6, 14, 12)
+  setFill(ctx, isSummer ? '#0f5fa9' : '#9f613d')
+  ctx.fillRect(x + 42, rainY - 6, 14, 12)
+  drawLabel(ctx, isSummer ? '降水弱→强' : '干旱弱→强', x + 62, rainY, '#314d5d', 10, 'left')
+
+  const pressureY = y + 78
+  ;[['H', '#c75b3a'], ['L', '#2d76b6']].forEach(([type, color], index) => {
+    const cx = x + 22 + index * 24
+    ctx.beginPath()
+    ctx.arc(cx, pressureY, 7, 0, Math.PI * 2)
+    setFill(ctx, type === 'H' ? '#ffece0' : '#e2f3ff')
+    ctx.fill()
+    setStroke(ctx, color, 1)
+    ctx.stroke()
+    drawLabel(ctx, type, cx, pressureY, color, 9, 'center')
+  })
+  drawLabel(ctx, '高压 / 低压', x + 62, pressureY, '#314d5d', 10, 'left')
+}
+
 Page({
   data: {
     season: 'winter',
@@ -281,11 +375,36 @@ Page({
   },
 
   onShow() {
+    this.startWindAnimation()
     this.drawModel()
+  },
+
+  onHide() {
+    this.stopWindAnimation()
+  },
+
+  onUnload() {
+    this.stopWindAnimation()
   },
 
   onResize() {
     this.resizeCanvas()
+  },
+
+  startWindAnimation() {
+    this.stopWindAnimation()
+    this.flowTime = Date.now()
+    this.windAnimationTimer = setInterval(() => {
+      this.flowTime = Date.now()
+      this.drawModel()
+    }, 140)
+  },
+
+  stopWindAnimation() {
+    if (this.windAnimationTimer) {
+      clearInterval(this.windAnimationTimer)
+      this.windAnimationTimer = null
+    }
   },
 
   resizeCanvas() {
@@ -361,6 +480,7 @@ Page({
     const pixelRatio = this.data.pixelRatio || 1
     const season = this.data.season
     const config = this.data.config
+    const time = this.flowTime || Date.now()
 
     ctx.scale(pixelRatio, pixelRatio)
     ctx.clearRect(0, 0, width, height)
@@ -377,21 +497,22 @@ Page({
     if (season === 'winter') {
       drawPressure(ctx, width, height, 0.66, 0.25, config.landPressure, '大陆冷高压')
       drawPressure(ctx, width, height, 0.35, 0.72, config.oceanPressure, '海洋相对低压')
-      drawArrow(ctx, width, height, [0.72, 0.28], [0.45, 0.62], '#376da4', '东北季风')
-      drawArrow(ctx, width, height, [0.61, 0.30], [0.28, 0.69], '#376da4', '')
-      drawArrow(ctx, width, height, [0.80, 0.36], [0.61, 0.76], '#376da4', '')
+      drawArrow(ctx, width, height, [0.72, 0.28], [0.45, 0.62], '#376da4', '东北季风', time, 0.1, 0.8)
+      drawArrow(ctx, width, height, [0.61, 0.30], [0.28, 0.69], '#376da4', '', time, 0.35, 0.7)
+      drawArrow(ctx, width, height, [0.80, 0.36], [0.61, 0.76], '#376da4', '', time, 0.58, 0.7)
     } else {
       drawPressure(ctx, width, height, 0.63, 0.25, config.landPressure, '大陆热低压')
       drawPressure(ctx, width, height, 0.30, 0.76, config.oceanPressure, '海洋相对高压')
-      drawArrow(ctx, width, height, [0.17, 0.80], [0.43, 0.47], '#df6a3f', '西南季风')
-      drawArrow(ctx, width, height, [0.43, 0.86], [0.64, 0.47], '#df6a3f', '')
-      drawArrow(ctx, width, height, [0.22, 0.66], [0.58, 0.34], '#df6a3f', '')
+      drawArrow(ctx, width, height, [0.17, 0.80], [0.43, 0.47], '#df6a3f', '西南季风', time, 0.04, 1.4)
+      drawArrow(ctx, width, height, [0.43, 0.86], [0.64, 0.47], '#df6a3f', '', time, 0.28, 1.25)
+      drawArrow(ctx, width, height, [0.22, 0.66], [0.58, 0.34], '#df6a3f', '', time, 0.52, 1.25)
       if (this.data.showWindBelt) {
-        drawCurvedArrow(ctx, width, height, [0.84, 0.91], [0.55, 0.87], [0.40, 0.62], '#9a5ab8', '东南信风越赤道右偏')
+        drawCurvedArrow(ctx, width, height, [0.84, 0.91], [0.55, 0.87], [0.40, 0.62], '#9a5ab8', '东南信风越赤道右偏', time)
       }
     }
 
-    drawLabel(ctx, config.windFeature, n(0.83, width), n(0.12, height), season === 'summer' ? '#ba5937' : '#376da4', 15, 'center')
+    drawLabel(ctx, config.windFeature, n(0.62, width), n(0.13, height), season === 'summer' ? '#ba5937' : '#376da4', 15, 'center')
+    drawLegend(ctx, width, height, season)
     ctx.draw(false)
   }
 })

@@ -1491,6 +1491,24 @@
       }
     }
 
+    function drawSoftPolygon(points, fill, alpha = 0.28, blur = 16) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.filter = `blur(${blur}px)`;
+      drawPolygon(points, fill);
+      ctx.filter = 'none';
+      ctx.globalAlpha = alpha * 0.72;
+      drawPolygon(points, fill);
+      ctx.restore();
+    }
+
+    function geoPolygon(points) {
+      return points.map(([lon, lat]) => {
+        const point = project(lon, lat);
+        return [point.x / canvas.width, point.y / canvas.height];
+      });
+    }
+
     function drawLabel(text, x, y, color, size, align = 'center') {
       ctx.save();
       ctx.font = `700 ${size}px "Microsoft YaHei", sans-serif`;
@@ -1545,6 +1563,16 @@
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
+      ctx.globalAlpha = state.season === 'summer' ? 0.58 : 0.34;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.lineWidth = state.season === 'summer' ? 5 : 3.5;
+      ctx.setLineDash([34, 24]);
+      ctx.lineDashOffset = -time * (state.season === 'summer' ? 0.11 : 0.065);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
       drawArrowHead(end.x, end.y, angle, color, 34);
 
@@ -1589,6 +1617,16 @@
       ctx.moveTo(start.x, start.y);
       ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
       ctx.stroke();
+      ctx.globalAlpha = 0.56;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.84)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([30, 20]);
+      ctx.lineDashOffset = -time * 0.1;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
       drawArrowHead(end.x, end.y, angle, color, 32);
 
@@ -1651,6 +1689,97 @@
     function drawPressureGeo(lon, lat, type, caption) {
       const point = project(lon, lat);
       drawPressure(point.x / canvas.width, point.y / canvas.height, type, caption);
+    }
+
+    function drawLegend(time = performance.now()) {
+      const isSummer = state.season === 'summer';
+      const x = canvas.width - 356;
+      const y = 26;
+      const width = 324;
+      const height = 188;
+      const windColor = isSummer ? '#df6a3f' : '#376da4';
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.strokeStyle = 'rgba(34, 72, 94, 0.16)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x, y, width, height, 16);
+      } else {
+        ctx.rect(x, y, width, height);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#17364b';
+      ctx.font = '800 24px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isSummer ? '夏季图例 · 暖湿多雨' : '冬季图例 · 干燥少雨', x + 22, y + 28);
+
+      const lineY = y + 66;
+      ctx.strokeStyle = windColor;
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x + 28, lineY);
+      ctx.lineTo(x + 92, lineY);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([14, 10]);
+      ctx.lineDashOffset = -time * 0.06;
+      ctx.beginPath();
+      ctx.moveTo(x + 28, lineY);
+      ctx.lineTo(x + 92, lineY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawArrowHead(x + 92, lineY, 0, windColor, 18);
+
+      ctx.fillStyle = '#314d5d';
+      ctx.font = '700 20px "Microsoft YaHei", sans-serif';
+      ctx.fillText(isSummer ? '西南季风主风向' : '东北季风主风向', x + 112, lineY);
+
+      const rainY = y + 104;
+      const gradient = ctx.createLinearGradient(x + 26, rainY - 10, x + 94, rainY + 10);
+      if (isSummer) {
+        gradient.addColorStop(0, 'rgba(177, 226, 246, 0.90)');
+        gradient.addColorStop(0.52, 'rgba(42, 139, 209, 0.90)');
+        gradient.addColorStop(1, 'rgba(17, 89, 169, 0.92)');
+      } else {
+        gradient.addColorStop(0, 'rgba(236, 208, 172, 0.90)');
+        gradient.addColorStop(1, 'rgba(167, 104, 69, 0.92)');
+      }
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x + 28, rainY - 11, 66, 22);
+      ctx.fillStyle = '#314d5d';
+      ctx.fillText(isSummer ? '降水强度：弱 → 强' : '干旱色带：弱 → 强', x + 112, rainY);
+
+      const pressureY = y + 142;
+      [['H', '#c75b3a', '高压'], ['L', '#2d76b6', '低压']].forEach(([type, color, label], index) => {
+        const cx = x + 42 + index * 48;
+        ctx.beginPath();
+        ctx.arc(cx, pressureY, 16, 0, Math.PI * 2);
+        ctx.fillStyle = type === 'H' ? 'rgba(255, 238, 224, 0.95)' : 'rgba(226, 243, 255, 0.95)';
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = '800 19px "Microsoft YaHei", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(type, cx, pressureY + 1);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#314d5d';
+        ctx.font = '700 18px "Microsoft YaHei", sans-serif';
+        ctx.fillText(label, cx - 18, pressureY + 28);
+      });
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#314d5d';
+      ctx.font = '700 20px "Microsoft YaHei", sans-serif';
+      ctx.fillText('气压中心', x + 130, pressureY);
+      ctx.restore();
     }
 
     function drawBaseMap() {
@@ -1785,21 +1914,34 @@
 
     function drawRain(time = performance.now()) {
       if (state.season === 'summer') {
-        ctx.save();
-        ctx.globalAlpha = 0.28;
-        const bayRain = [[82, 20], [92, 20], [99, 26], [95, 32], [84, 30], [78, 25]]
-          .map(([lon, lat]) => {
-            const p = project(lon, lat);
-            return [p.x / canvas.width, p.y / canvas.height];
-          });
-        const westRain = [[66, 7], [74, 9], [77, 19], [72, 23], [67, 16]]
-          .map(([lon, lat]) => {
-            const p = project(lon, lat);
-            return [p.x / canvas.width, p.y / canvas.height];
-          });
-        drawPolygon(bayRain, '#248bd4');
-        drawPolygon(westRain, '#248bd4');
-        ctx.restore();
+        const rainBands = [
+          {
+            color: '#9ed7f2',
+            alpha: 0.18,
+            points: [[64, 6], [90, 7], [101, 18], [99, 31], [86, 33], [70, 25], [60, 14]]
+          },
+          {
+            color: '#2c93d8',
+            alpha: 0.26,
+            points: [[68, 8], [78, 11], [83, 22], [77, 28], [66, 18]]
+          },
+          {
+            color: '#2c93d8',
+            alpha: 0.27,
+            points: [[80, 18], [93, 19], [98, 27], [94, 33], [83, 31], [77, 25]]
+          },
+          {
+            color: '#0f5fa9',
+            alpha: 0.34,
+            points: [[83, 24], [94, 24], [96, 30], [89, 33], [80, 29]]
+          },
+          {
+            color: '#0f5fa9',
+            alpha: 0.32,
+            points: [[69, 11], [75, 14], [77, 22], [72, 26], [67, 18]]
+          }
+        ];
+        rainBands.forEach((band) => drawSoftPolygon(geoPolygon(band.points), band.color, band.alpha, 18));
         ctx.strokeStyle = '#1d80c1';
         ctx.lineWidth = 5;
         ctx.lineCap = 'round';
@@ -1820,14 +1962,23 @@
         const label = project(90, 27);
         drawLabel('迎风坡降水增强', label.x, label.y + 42, '#cfefff', 30);
       } else {
+        [
+          { color: '#e3c49f', alpha: 0.14, points: [[61, 7], [92, 9], [94, 25], [79, 31], [57, 23]] },
+          { color: '#c08455', alpha: 0.18, points: [[66, 10], [88, 12], [90, 22], [77, 27], [62, 21]] },
+          { color: '#9f613d', alpha: 0.15, points: [[70, 15], [84, 16], [85, 22], [77, 25], [67, 21]] }
+        ].forEach((band) => drawSoftPolygon(geoPolygon(band.points), band.color, band.alpha, 14));
         ctx.save();
-        ctx.globalAlpha = 0.18;
-        const dryArea = [[66, 9], [88, 10], [91, 23], [77, 27], [61, 22]]
-          .map(([lon, lat]) => {
-            const p = project(lon, lat);
-            return [p.x / canvas.width, p.y / canvas.height];
-          });
-        drawPolygon(dryArea, '#b98254');
+        ctx.strokeStyle = 'rgba(133, 88, 56, 0.28)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 14]);
+        for (let i = 0; i < 9; i += 1) {
+          const start = project(62 + i * 3.5, 11 + Math.sin(i) * 2);
+          const end = project(68 + i * 3.5, 24 + Math.cos(i) * 2);
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+        }
         ctx.restore();
         const label = project(78, 19);
         drawLabel('干燥少雨', label.x, label.y + 28, '#fff4df', 32);
@@ -1937,8 +2088,8 @@
           drawAnimatedCurveGeo([103, -4.5], [82, -1], [68, 10], '#9a5ab8', '东南信风越赤道后右偏', time, 0.12);
         }
       }
-      const featureLabel = project(104, 34);
-      drawLabel(config.windFeature, featureLabel.x, featureLabel.y, state.season === 'summer' ? '#ffe4d5' : '#dff2ff', 36);
+      drawLabel(config.windFeature, n(0.62, canvas.width), n(0.12, canvas.height), state.season === 'summer' ? '#ffe4d5' : '#dff2ff', 36);
+      drawLegend(time);
       if (updateText) {
         renderModelText();
       }
