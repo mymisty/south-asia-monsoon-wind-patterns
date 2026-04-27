@@ -250,15 +250,28 @@ function drawBaseMap(ctx, width, height, season) {
   drawLabel(ctx, '赤道', n(0.08, width), n(0.80, height), '#62747c', 11, 'center')
 }
 
+function getWindBeltMeta(season) {
+  const windBeltAvailable = season === 'summer'
+  return {
+    windBeltAvailable,
+    windBeltDesc: windBeltAvailable ? '夏季东南信风越赤道右偏' : '仅夏季显示：冬季不绘制风带移动'
+  }
+}
+
 Page({
   data: {
     season: 'winter',
     showTerrain: true,
     showRainfall: true,
     showWindBelt: false,
+    windBeltAvailable: false,
+    windBeltDesc: '仅夏季显示：冬季不绘制风带移动',
     showExplain: true,
     canvasWidth: 343,
     canvasHeight: 193,
+    canvasPixelWidth: 343,
+    canvasPixelHeight: 193,
+    pixelRatio: 1,
     config: monsoonConfig.winter,
     impactCards: monsoonConfig.winter.impactCards
   },
@@ -279,9 +292,13 @@ Page({
     const info = wx.getSystemInfoSync()
     const width = Math.min(info.windowWidth - 32, 720)
     const height = Math.round(width * 9 / 16)
+    const pixelRatio = Math.min(info.pixelRatio || 1, 3)
     this.setData({
       canvasWidth: width,
-      canvasHeight: height
+      canvasHeight: height,
+      canvasPixelWidth: Math.round(width * pixelRatio),
+      canvasPixelHeight: Math.round(height * pixelRatio),
+      pixelRatio
     }, () => this.drawModel())
   },
 
@@ -291,15 +308,25 @@ Page({
       return
     }
     const config = monsoonConfig[season]
+    const windBeltMeta = getWindBeltMeta(season)
     this.setData({
       season,
       config,
-      impactCards: config.impactCards
+      impactCards: config.impactCards,
+      windBeltAvailable: windBeltMeta.windBeltAvailable,
+      windBeltDesc: windBeltMeta.windBeltDesc
     }, () => this.drawModel())
   },
 
   toggleLayer(event) {
     const key = event.currentTarget.dataset.key
+    if (key === 'showWindBelt' && !this.data.windBeltAvailable) {
+      wx.showToast({
+        title: '风带移动仅夏季显示',
+        icon: 'none'
+      })
+      return
+    }
     this.setData({
       [key]: event.detail.value
     }, () => this.drawModel())
@@ -331,9 +358,11 @@ Page({
     const ctx = wx.createCanvasContext('monsoonCanvas', this)
     const width = this.data.canvasWidth
     const height = this.data.canvasHeight
+    const pixelRatio = this.data.pixelRatio || 1
     const season = this.data.season
     const config = this.data.config
 
+    ctx.scale(pixelRatio, pixelRatio)
     ctx.clearRect(0, 0, width, height)
     drawBaseMap(ctx, width, height, season)
 

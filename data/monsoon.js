@@ -3,6 +3,8 @@ const monsoonConfig = {
     label: '冬季 / 1月',
     landPressure: 'H',
     oceanPressure: 'L',
+    landPressureText: '高压(H)',
+    oceanPressureText: '低压(L)',
     windName: '东北季风',
     windFeature: '干燥少雨',
     landThermal: '大陆降温快',
@@ -30,6 +32,8 @@ const monsoonConfig = {
     label: '夏季 / 7月',
     landPressure: 'L',
     oceanPressure: 'H',
+    landPressureText: '低压(L)',
+    oceanPressureText: '高压(H)',
     windName: '西南季风',
     windFeature: '暖湿多雨',
     landThermal: '大陆升温快',
@@ -58,7 +62,7 @@ const monsoonConfig = {
 
 const compareRows = [
   { id: 'season', label: '季节', winter: '冬季', summer: '夏季' },
-  { id: 'pressure', label: '气压', winter: '大陆高压，海洋相对低压', summer: '大陆低压，海洋相对高压' },
+  { id: 'pressure', label: '气压', winter: '大陆高压(H)，海洋相对低压(L)', summer: '大陆低压(L)，海洋相对高压(H)' },
   { id: 'wind', label: '风向', winter: '东北季风', summer: '西南季风' },
   { id: 'source', label: '来源', winter: '亚洲内陆', summer: '印度洋' },
   { id: 'feature', label: '性质', winter: '干燥', summer: '暖湿' },

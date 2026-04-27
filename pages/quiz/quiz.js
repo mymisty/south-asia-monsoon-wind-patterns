@@ -4,9 +4,50 @@ function createEmptyAnswers() {
   return questions.map(() => -1)
 }
 
+function optionLetter(index) {
+  const base = 'A'.charCodeAt(0)
+  let value = index
+  let label = ''
+
+  do {
+    label = String.fromCharCode(base + (value % 26)) + label
+    value = Math.floor(value / 26) - 1
+  } while (value >= 0)
+
+  return label
+}
+
+function decorateQuestions() {
+  return questions.map((question) => {
+    return Object.assign({}, question, {
+      optionItems: question.options.map((text, index) => ({
+        text,
+        letter: optionLetter(index)
+      }))
+    })
+  })
+}
+
+function backToModel() {
+  const pages = getCurrentPages()
+
+  for (let index = pages.length - 2; index >= 0; index -= 1) {
+    if (pages[index].route === 'pages/model/model') {
+      wx.navigateBack({
+        delta: pages.length - 1 - index
+      })
+      return
+    }
+  }
+
+  wx.redirectTo({
+    url: '/pages/model/model'
+  })
+}
+
 Page({
   data: {
-    questions,
+    questions: decorateQuestions(),
     selectedList: createEmptyAnswers(),
     submitted: false,
     score: 0
@@ -54,8 +95,6 @@ Page({
   },
 
   goModel() {
-    wx.navigateTo({
-      url: '/pages/model/model'
-    })
+    backToModel()
   }
 })

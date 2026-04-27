@@ -546,6 +546,19 @@
       border-bottom: 0;
     }
 
+    .toggle-row.is-disabled {
+      opacity: 0.58;
+    }
+
+    .toggle-row.is-disabled .toggle-title,
+    .toggle-row.is-disabled .toggle-desc {
+      color: #8a98a1;
+    }
+
+    .toggle-row.is-disabled input {
+      cursor: not-allowed;
+    }
+
     .toggle-row span {
       display: block;
     }
@@ -1012,12 +1025,12 @@
               </span>
               <input type="checkbox" id="showRainfall" checked>
             </label>
-            <label class="toggle-row">
+            <label class="toggle-row" id="windBeltRow">
               <span>
                 <span class="toggle-title">显示风带移动</span>
-                <span class="toggle-desc">夏季东南信风越赤道右偏</span>
+                <span class="toggle-desc" id="windBeltDesc">仅夏季显示：冬季不绘制风带移动</span>
               </span>
-              <input type="checkbox" id="showWindBelt">
+              <input type="checkbox" id="showWindBelt" disabled aria-describedby="windBeltDesc">
             </label>
           </div>
           <div class="explain card">
@@ -1038,7 +1051,7 @@
       </div>
       <div class="compare-table card" id="compareTable"></div>
       <div class="actions">
-        <button class="secondary" data-goto="model">返回模型</button>
+        <button class="secondary" data-back-to="model">返回模型</button>
         <button class="primary" data-goto="quiz">开始测验</button>
       </div>
     </section>
@@ -1054,7 +1067,7 @@
       </div>
       <div class="quiz-list" id="quizList"></div>
       <div class="quiz-actions">
-        <button class="secondary" data-goto="model">返回模型</button>
+        <button class="secondary" data-back-to="model">返回模型</button>
         <button class="secondary" id="resetQuiz">重新作答</button>
         <button class="primary" id="submitQuiz">提交答案</button>
       </div>
@@ -1109,7 +1122,7 @@
     const compareRows = [
       ['项目', '冬季风', '夏季风'],
       ['季节', '冬季', '夏季'],
-      ['气压', '大陆高压，海洋相对低压', '大陆低压，海洋相对高压'],
+      ['气压', '大陆高压(H)，海洋相对低压(L)', '大陆低压(L)，海洋相对高压(H)'],
       ['风向', '东北季风', '西南季风'],
       ['来源', '亚洲内陆', '印度洋'],
       ['性质', '干燥', '暖湿'],
@@ -1148,6 +1161,8 @@
     const CACHE_VERSION = '2026-04-25-local-v2';
     const PAGE_IDS = ['home', 'region', 'model', 'compare', 'quiz'];
     const SEASONS = ['winter', 'summer'];
+    const BASE_CANVAS_WIDTH = 1280;
+    const BASE_CANVAS_HEIGHT = 720;
 
     const defaultState = {
       page: 'home',
@@ -1164,8 +1179,13 @@
       ...loadCachedState()
     };
 
-    const canvas = document.getElementById('monsoonCanvas');
-    const ctx = canvas.getContext('2d');
+    const canvasElement = document.getElementById('monsoonCanvas');
+    const ctx = canvasElement.getContext('2d');
+    const canvas = {
+      width: BASE_CANVAS_WIDTH,
+      height: BASE_CANVAS_HEIGHT,
+      dpr: 1
+    };
     const toast = document.getElementById('toast');
     const mapImages = {
       winter: new Image(),
@@ -1182,6 +1202,44 @@
 
     function n(value, size) {
       return value * size;
+    }
+
+    function syncCanvasResolution() {
+      const rect = canvasElement.getBoundingClientRect();
+      const cssWidth = Math.round(rect.width || BASE_CANVAS_WIDTH);
+      const cssHeight = Math.round(rect.height || cssWidth * 9 / 16 || BASE_CANVAS_HEIGHT);
+      const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+      const displayScale = Math.max(1, cssWidth / BASE_CANVAS_WIDTH, cssHeight / BASE_CANVAS_HEIGHT);
+      const backingScale = displayScale * dpr;
+      const pixelWidth = Math.max(1, Math.round(BASE_CANVAS_WIDTH * backingScale));
+      const pixelHeight = Math.max(1, Math.round(BASE_CANVAS_HEIGHT * backingScale));
+
+      if (canvasElement.width !== pixelWidth || canvasElement.height !== pixelHeight) {
+        canvasElement.width = pixelWidth;
+        canvasElement.height = pixelHeight;
+      }
+
+      canvas.width = BASE_CANVAS_WIDTH;
+      canvas.height = BASE_CANVAS_HEIGHT;
+      canvas.dpr = backingScale;
+      ctx.setTransform(backingScale, 0, 0, backingScale, 0, 0);
+    }
+
+    function formatPressure(type) {
+      return type === 'H' ? '高压(H)' : '低压(L)';
+    }
+
+    function optionLetter(index) {
+      const base = 'A'.charCodeAt(0);
+      let value = index;
+      let label = '';
+
+      do {
+        label = String.fromCharCode(base + (value % 26)) + label;
+        value = Math.floor(value / 26) - 1;
+      } while (value >= 0);
+
+      return label;
     }
 
     function mercY(lat) {
@@ -1237,9 +1295,10 @@
       if (!Array.isArray(value) || value.length !== questions.length) {
         return questions.map(() => -1);
       }
-      return value.map((item) => {
+      return value.map((item, questionIndex) => {
         const index = Number(item);
-        return Number.isInteger(index) && index >= -1 && index < 4 ? index : -1;
+        const optionCount = questions[questionIndex] ? questions[questionIndex].options.length : 0;
+        return Number.isInteger(index) && index >= -1 && index < optionCount ? index : -1;
       });
     }
 
@@ -1325,6 +1384,7 @@
         ...defaultState,
         selected: questions.map(() => -1)
       });
+      pageHistory.length = 0;
       syncControlsFromState();
       renderQuiz();
       setPage('home');
@@ -1334,15 +1394,27 @@
     }
 
     function syncControlsFromState() {
+      const windBeltToggle = document.getElementById('showWindBelt');
+      const windBeltAvailable = state.season === 'summer';
       document.getElementById('showTerrain').checked = state.showTerrain;
       document.getElementById('showRainfall').checked = state.showRainfall;
-      document.getElementById('showWindBelt').checked = state.showWindBelt;
+      windBeltToggle.checked = windBeltAvailable && state.showWindBelt;
+      windBeltToggle.disabled = !windBeltAvailable;
+      document.getElementById('windBeltRow').classList.toggle('is-disabled', !windBeltAvailable);
+      document.getElementById('windBeltDesc').textContent = windBeltAvailable
+        ? '夏季东南信风越赤道右偏'
+        : '仅夏季显示：冬季不绘制风带移动';
       document.querySelectorAll('[data-season]').forEach((item) => {
         item.classList.toggle('active', item.dataset.season === state.season);
       });
     }
 
+    const pageHistory = [];
+
     function setPage(page) {
+      if (!PAGE_IDS.includes(page)) {
+        return;
+      }
       state.page = page;
       document.querySelectorAll('.page').forEach((item) => item.classList.toggle('active', item.id === page));
       document.querySelectorAll('.tab').forEach((item) => item.classList.toggle('active', item.dataset.page === page));
@@ -1353,6 +1425,26 @@
         stopModelAnimation();
       }
       scheduleCacheSave();
+    }
+
+    function navigateTo(page) {
+      if (!PAGE_IDS.includes(page) || page === state.page) {
+        return;
+      }
+      pageHistory.push(state.page);
+      setPage(page);
+    }
+
+    function navigateBackTo(page) {
+      if (!PAGE_IDS.includes(page) || page === state.page) {
+        return;
+      }
+
+      const targetIndex = pageHistory.lastIndexOf(page);
+      if (targetIndex >= 0) {
+        pageHistory.length = targetIndex;
+      }
+      setPage(page);
     }
 
     function startModelAnimation() {
@@ -1819,6 +1911,7 @@
 
     function drawModel(time = performance.now(), updateText = true) {
       const config = monsoonConfig[state.season];
+      syncCanvasResolution();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawBaseMap();
       drawFocusRegion(time);
@@ -1858,8 +1951,8 @@
       const stateRows = [
         ['大陆热力', config.landThermal],
         ['海洋热力', config.oceanThermal],
-        ['大陆气压', config.landPressure],
-        ['海洋气压', config.oceanPressure],
+        ['大陆气压', formatPressure(config.landPressure)],
+        ['海洋气压', formatPressure(config.oceanPressure)],
         ['降水', config.rainfallLevel],
         ['风的性质', config.windFeature]
       ];
@@ -1889,7 +1982,7 @@
           const wrong = state.submitted && selected && question.answerIndex !== optionIndex;
           return `
             <button class="option ${selected ? 'selected' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}" data-question="${questionIndex}" data-option="${optionIndex}">
-              <span class="letter">${['A', 'B', 'C', 'D'][optionIndex]}</span>
+              <span class="letter">${optionLetter(optionIndex)}</span>
               <span>${option}</span>
             </button>
           `;
@@ -1916,13 +2009,17 @@
     });
 
     document.querySelectorAll('[data-goto]').forEach((button) => {
-      button.addEventListener('click', () => setPage(button.dataset.goto));
+      button.addEventListener('click', () => navigateTo(button.dataset.goto));
+    });
+
+    document.querySelectorAll('[data-back-to]').forEach((button) => {
+      button.addEventListener('click', () => navigateBackTo(button.dataset.backTo));
     });
 
     document.querySelectorAll('[data-season]').forEach((button) => {
       button.addEventListener('click', () => {
         state.season = button.dataset.season;
-        document.querySelectorAll('[data-season]').forEach((item) => item.classList.toggle('active', item === button));
+        syncControlsFromState();
         drawModel();
         scheduleCacheSave();
       });
@@ -1941,6 +2038,11 @@
     });
 
     document.getElementById('showWindBelt').addEventListener('change', (event) => {
+      if (state.season !== 'summer') {
+        event.target.checked = false;
+        showToast('风带移动仅夏季显示');
+        return;
+      }
       state.showWindBelt = event.target.checked;
       drawModel();
       scheduleCacheSave();
@@ -1950,7 +2052,7 @@
       try {
         const link = document.createElement('a');
         link.download = `南亚季风模型-${state.season === 'summer' ? '夏季风' : '冬季风'}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvasElement.toDataURL('image/png');
         link.click();
         showToast('已导出当前模型图');
       } catch (error) {

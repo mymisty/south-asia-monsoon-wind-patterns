@@ -12,6 +12,8 @@
       canvas-id="monsoonCanvas"
       id="monsoonCanvas"
       class="model-canvas"
+      width="{{canvasPixelWidth}}"
+      height="{{canvasPixelHeight}}"
       style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
     ></canvas>
   </view>
@@ -50,12 +52,18 @@
       </view>
       <switch checked="{{showRainfall}}" data-key="showRainfall" bindchange="toggleLayer" color="#1f7a68"></switch>
     </view>
-    <view class="switch-row">
+    <view class="switch-row {{windBeltAvailable ? '' : 'disabled'}}">
       <view>
         <text class="switch-title">显示风带移动</text>
-        <text class="switch-desc">夏季东南信风越赤道右偏</text>
+        <text class="switch-desc">{{windBeltDesc}}</text>
       </view>
-      <switch checked="{{showWindBelt}}" data-key="showWindBelt" bindchange="toggleLayer" color="#1f7a68"></switch>
+      <switch
+        checked="{{windBeltAvailable && showWindBelt}}"
+        disabled="{{!windBeltAvailable}}"
+        data-key="showWindBelt"
+        bindchange="toggleLayer"
+        color="#1f7a68"
+      ></switch>
     </view>
   </view>
 
@@ -85,11 +93,11 @@
       </view>
       <view>
         <text>大陆气压</text>
-        <text>{{config.landPressure}}</text>
+        <text>{{config.landPressureText}}</text>
       </view>
       <view>
         <text>海洋气压</text>
-        <text>{{config.oceanPressure}}</text>
+        <text>{{config.oceanPressureText}}</text>
       </view>
       <view>
         <text>降水</text>

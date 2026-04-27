@@ -102,6 +102,15 @@
   border-bottom: 0;
 }
 
+.switch-row.disabled {
+  opacity: 0.58;
+}
+
+.switch-row.disabled .switch-title,
+.switch-row.disabled .switch-desc {
+  color: #8a98a1;
+}
+
 .switch-row > view {
   flex: 1;
 }

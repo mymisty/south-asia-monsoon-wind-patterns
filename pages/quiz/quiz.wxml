@@ -17,8 +17,8 @@
     <text class="question-title">{{questionIndex + 1}}. {{question.stem}}</text>
     <view class="option-list">
       <button
-        wx:for="{{question.options}}"
-        wx:key="*this"
+        wx:for="{{question.optionItems}}"
+        wx:key="text"
         wx:for-item="option"
         wx:for-index="optionIndex"
         class="option-btn {{selectedList[questionIndex] === optionIndex ? 'selected' : ''}} {{submitted && question.answerIndex === optionIndex ? 'correct' : ''}} {{submitted && selectedList[questionIndex] === optionIndex && question.answerIndex !== optionIndex ? 'wrong' : ''}}"
@@ -26,8 +26,8 @@
         data-option="{{optionIndex}}"
         bindtap="chooseOption"
       >
-        <text class="option-letter">{{['A', 'B', 'C', 'D'][optionIndex]}}</text>
-        <text class="option-text">{{option}}</text>
+        <text class="option-letter">{{option.letter}}</text>
+        <text class="option-text">{{option.text}}</text>
       </button>
     </view>
     <view class="analysis" wx:if="{{submitted}}">
