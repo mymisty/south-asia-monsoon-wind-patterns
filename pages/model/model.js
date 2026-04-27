@@ -13,6 +13,132 @@ function setStroke(ctx, color, width) {
   ctx.setLineWidth(width)
 }
 
+const WIND_ANIMATION_INTERVAL = 40
+
+const WIND_ARROW_STYLES = {
+  winterMain: {
+    color: '#376da4',
+    particleColor: '#9ed4ff',
+    lineWidth: 5.4,
+    alpha: 0.9,
+    particleSize: 4.2,
+    particles: 4,
+    speed: 0.0012,
+    labelSize: 13
+  },
+  winterSecondary: {
+    color: '#376da4',
+    particleColor: '#b8def8',
+    lineWidth: 3.4,
+    alpha: 0.54,
+    particleSize: 2.9,
+    particles: 3,
+    speed: 0.0009,
+    labelSize: 11
+  },
+  summerMain: {
+    color: '#df6a3f',
+    particleColor: '#ffd0a8',
+    lineWidth: 5.8,
+    alpha: 0.92,
+    particleSize: 4.6,
+    particles: 5,
+    speed: 0.00155,
+    labelSize: 13
+  },
+  summerSecondary: {
+    color: '#df6a3f',
+    particleColor: '#ffd9ba',
+    lineWidth: 3.5,
+    alpha: 0.58,
+    particleSize: 3,
+    particles: 3,
+    speed: 0.00115,
+    labelSize: 11
+  },
+  windBelt: {
+    color: '#9a5ab8',
+    particleColor: '#e5c6ff',
+    lineWidth: 3.6,
+    alpha: 0.62,
+    particleSize: 3.2,
+    particles: 4,
+    speed: 0.0012,
+    labelSize: 11
+  }
+}
+
+const SEASON_WIND_PATHS = {
+  winter: [
+    {
+      role: 'main',
+      label: '东北季风',
+      labelPoint: [0.47, 0.52],
+      labelAlign: 'right',
+      start: [0.75, 0.26],
+      control: [0.66, 0.36],
+      end: [0.48, 0.58],
+      offset: 0.08
+    },
+    {
+      role: 'secondary',
+      start: [0.62, 0.30],
+      control: [0.48, 0.42],
+      end: [0.30, 0.66],
+      offset: 0.38
+    },
+    {
+      role: 'secondary',
+      start: [0.83, 0.37],
+      control: [0.75, 0.48],
+      end: [0.62, 0.73],
+      offset: 0.62
+    }
+  ],
+  summer: [
+    {
+      role: 'main',
+      label: '西南季风',
+      labelPoint: [0.34, 0.50],
+      labelAlign: 'left',
+      start: [0.16, 0.82],
+      control: [0.27, 0.62],
+      end: [0.45, 0.46],
+      offset: 0.04
+    },
+    {
+      role: 'secondary',
+      label: '阿拉伯海分支',
+      labelPoint: [0.57, 0.55],
+      labelAlign: 'left',
+      start: [0.42, 0.86],
+      control: [0.54, 0.68],
+      end: [0.66, 0.46],
+      offset: 0.31
+    },
+    {
+      role: 'secondary',
+      label: '孟加拉湾分支',
+      labelPoint: [0.59, 0.33],
+      labelAlign: 'left',
+      start: [0.22, 0.66],
+      control: [0.40, 0.48],
+      end: [0.61, 0.33],
+      offset: 0.56
+    }
+  ]
+}
+
+const WIND_BELT_PATH = {
+  label: '东南信风越赤道右偏',
+  labelPoint: [0.28, 0.72],
+  labelAlign: 'left',
+  start: [0.84, 0.91],
+  control: [0.56, 0.86],
+  end: [0.40, 0.62],
+  offset: 0.16
+}
+
 function drawPolygon(ctx, points, width, height, fill, stroke) {
   ctx.beginPath()
   points.forEach((point, index) => {
@@ -59,40 +185,6 @@ function drawArrowHead(ctx, x, y, angle, color, size) {
   ctx.fill()
 }
 
-function drawArrow(ctx, width, height, start, end, color, label, time, offset, strength) {
-  const x1 = n(start[0], width)
-  const y1 = n(start[1], height)
-  const x2 = n(end[0], width)
-  const y2 = n(end[1], height)
-  const angle = Math.atan2(y2 - y1, x2 - x1)
-  const flowStrength = strength || 1
-
-  ctx.beginPath()
-  ctx.moveTo(x1, y1)
-  ctx.lineTo(x2, y2)
-  ctx.setLineCap('round')
-  setStroke(ctx, color, 5 + flowStrength)
-  ctx.stroke()
-
-  const phase = ((time || 0) * (0.0015 + flowStrength * 0.00045) + (offset || 0)) % 1
-  for (let i = 0; i < 4; i += 1) {
-    const t = (phase + i * 0.25) % 1
-    const px = x1 + (x2 - x1) * t
-    const py = y1 + (y2 - y1) * t
-    ctx.setGlobalAlpha(0.22 + 0.52 * Math.sin(Math.PI * t))
-    setFill(ctx, '#ffffff')
-    ctx.beginPath()
-    ctx.arc(px, py, 2.6 + flowStrength * 1.6, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  ctx.setGlobalAlpha(1)
-  drawArrowHead(ctx, x2, y2, angle, color, Math.max(13, width * 0.028))
-
-  if (label) {
-    drawLabel(ctx, label, (x1 + x2) / 2, (y1 + y2) / 2 - 14, color, 13, 'center')
-  }
-}
-
 function quadraticPoint(start, control, end, t) {
   const one = 1 - t
   return {
@@ -101,38 +193,92 @@ function quadraticPoint(start, control, end, t) {
   }
 }
 
-function drawCurvedArrow(ctx, width, height, start, control, end, color, label, time) {
-  const x1 = n(start[0], width)
-  const y1 = n(start[1], height)
-  const cx = n(control[0], width)
-  const cy = n(control[1], height)
-  const x2 = n(end[0], width)
-  const y2 = n(end[1], height)
-  const angle = Math.atan2(y2 - cy, x2 - cx)
-  const pathStart = { x: x1, y: y1 }
-  const pathControl = { x: cx, y: cy }
-  const pathEnd = { x: x2, y: y2 }
+function pathPoint(point, width, height) {
+  return {
+    x: n(point[0], width),
+    y: n(point[1], height)
+  }
+}
 
-  ctx.beginPath()
-  ctx.moveTo(x1, y1)
-  ctx.quadraticCurveTo(cx, cy, x2, y2)
+function drawLabelTag(ctx, text, x, y, color, size, align) {
+  const paddingX = 8
+  const paddingY = 5
+  const tagWidth = text.length * size * 0.9 + paddingX * 2
+  const tagHeight = size + paddingY * 2
+  const left = align === 'right' ? x - tagWidth : align === 'center' ? x - tagWidth / 2 : x
+
+  ctx.setGlobalAlpha(0.72)
+  setFill(ctx, '#ffffff')
+  ctx.fillRect(left, y - tagHeight / 2, tagWidth, tagHeight)
+  ctx.setGlobalAlpha(1)
+  drawLabel(ctx, text, left + (align === 'right' ? tagWidth - paddingX : paddingX), y, color, size, align === 'right' ? 'right' : 'left')
+}
+
+function drawWindArrow(ctx, width, height, path, style, time) {
+  const start = pathPoint(path.start, width, height)
+  const control = pathPoint(path.control, width, height)
+  const end = pathPoint(path.end, width, height)
+  const endTangent = quadraticPoint(start, control, end, 0.97)
+  const angle = Math.atan2(end.y - endTangent.y, end.x - endTangent.x)
+  const lineWidth = style.lineWidth
+
   ctx.setLineCap('round')
-  setStroke(ctx, color, 4)
+  if (ctx.setLineJoin) {
+    ctx.setLineJoin('round')
+  }
+
+  ctx.setGlobalAlpha(style.alpha * 0.18)
+  setStroke(ctx, style.color, lineWidth + 4)
+  ctx.beginPath()
+  ctx.moveTo(start.x, start.y)
+  ctx.quadraticCurveTo(control.x, control.y, end.x, end.y)
   ctx.stroke()
 
-  const phase = ((time || 0) * 0.0014) % 1
-  for (let i = 0; i < 5; i += 1) {
-    const t = (phase + i * 0.2) % 1
-    const point = quadraticPoint(pathStart, pathControl, pathEnd, t)
-    ctx.setGlobalAlpha(0.24 + 0.5 * Math.sin(Math.PI * t))
-    setFill(ctx, '#ffffff')
+  ctx.setGlobalAlpha(style.alpha)
+  setStroke(ctx, style.color, lineWidth)
+  ctx.beginPath()
+  ctx.moveTo(start.x, start.y)
+  ctx.quadraticCurveTo(control.x, control.y, end.x, end.y)
+  ctx.stroke()
+
+  const phase = ((time || 0) * style.speed + (path.offset || 0)) % 1
+  for (let i = 0; i < style.particles; i += 1) {
+    const t = (phase + i / style.particles) % 1
+    const point = quadraticPoint(start, control, end, t)
+    const tail = quadraticPoint(start, control, end, Math.max(0, t - 0.045))
+    ctx.setGlobalAlpha(0.24 + 0.46 * Math.sin(Math.PI * t))
+    setStroke(ctx, style.particleColor, Math.max(1.2, lineWidth * 0.34))
     ctx.beginPath()
-    ctx.arc(point.x, point.y, 3.4, 0, Math.PI * 2)
+    ctx.moveTo(tail.x, tail.y)
+    ctx.lineTo(point.x, point.y)
+    ctx.stroke()
+    ctx.setGlobalAlpha(0.38 + 0.42 * Math.sin(Math.PI * t))
+    setFill(ctx, style.particleColor)
+    ctx.beginPath()
+    ctx.arc(point.x, point.y, style.particleSize, 0, Math.PI * 2)
     ctx.fill()
   }
+
   ctx.setGlobalAlpha(1)
-  drawArrowHead(ctx, x2, y2, angle, color, Math.max(12, width * 0.026))
-  drawLabel(ctx, label, n(0.36, width), n(0.72, height), color, 12, 'center')
+  drawArrowHead(ctx, end.x, end.y, angle, style.color, Math.max(8, lineWidth * 2.15))
+
+  if (path.label) {
+    const labelPoint = pathPoint(path.labelPoint, width, height)
+    drawLabelTag(ctx, path.label, labelPoint.x, labelPoint.y, style.color, style.labelSize, path.labelAlign || 'left')
+  }
+}
+
+function drawWindLayer(ctx, width, height, season, time) {
+  const paths = SEASON_WIND_PATHS[season]
+  const stylePrefix = season === 'summer' ? 'summer' : 'winter'
+
+  paths
+    .filter((path) => path.role !== 'main')
+    .forEach((path) => drawWindArrow(ctx, width, height, path, WIND_ARROW_STYLES[`${stylePrefix}Secondary`], time))
+
+  paths
+    .filter((path) => path.role === 'main')
+    .forEach((path) => drawWindArrow(ctx, width, height, path, WIND_ARROW_STYLES[`${stylePrefix}Main`], time))
 }
 
 function drawPressure(ctx, width, height, x, y, type, caption) {
@@ -397,7 +543,7 @@ Page({
     this.windAnimationTimer = setInterval(() => {
       this.flowTime = Date.now()
       this.drawModel()
-    }, 140)
+    }, WIND_ANIMATION_INTERVAL)
   },
 
   stopWindAnimation() {
@@ -497,17 +643,13 @@ Page({
     if (season === 'winter') {
       drawPressure(ctx, width, height, 0.66, 0.25, config.landPressure, '大陆冷高压')
       drawPressure(ctx, width, height, 0.35, 0.72, config.oceanPressure, '海洋相对低压')
-      drawArrow(ctx, width, height, [0.72, 0.28], [0.45, 0.62], '#376da4', '东北季风', time, 0.1, 0.8)
-      drawArrow(ctx, width, height, [0.61, 0.30], [0.28, 0.69], '#376da4', '', time, 0.35, 0.7)
-      drawArrow(ctx, width, height, [0.80, 0.36], [0.61, 0.76], '#376da4', '', time, 0.58, 0.7)
+      drawWindLayer(ctx, width, height, season, time)
     } else {
       drawPressure(ctx, width, height, 0.63, 0.25, config.landPressure, '大陆热低压')
       drawPressure(ctx, width, height, 0.30, 0.76, config.oceanPressure, '海洋相对高压')
-      drawArrow(ctx, width, height, [0.17, 0.80], [0.43, 0.47], '#df6a3f', '西南季风', time, 0.04, 1.4)
-      drawArrow(ctx, width, height, [0.43, 0.86], [0.64, 0.47], '#df6a3f', '', time, 0.28, 1.25)
-      drawArrow(ctx, width, height, [0.22, 0.66], [0.58, 0.34], '#df6a3f', '', time, 0.52, 1.25)
+      drawWindLayer(ctx, width, height, season, time)
       if (this.data.showWindBelt) {
-        drawCurvedArrow(ctx, width, height, [0.84, 0.91], [0.55, 0.87], [0.40, 0.62], '#9a5ab8', '东南信风越赤道右偏', time)
+        drawWindArrow(ctx, width, height, WIND_BELT_PATH, WIND_ARROW_STYLES.windBelt, time)
       }
     }
 
