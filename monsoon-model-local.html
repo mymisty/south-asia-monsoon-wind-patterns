@@ -1174,9 +1174,35 @@
       submitted: false
     };
 
+    function parseLaunchState() {
+      const params = new URLSearchParams(window.location.search);
+      const launch = {};
+      const page = params.get('page');
+      const season = params.get('season');
+      const boolMap = {
+        terrain: 'showTerrain',
+        rainfall: 'showRainfall',
+        windBelt: 'showWindBelt'
+      };
+
+      if (PAGE_IDS.includes(page)) {
+        launch.page = page;
+      }
+      if (SEASONS.includes(season)) {
+        launch.season = season;
+      }
+      Object.entries(boolMap).forEach(([paramName, stateKey]) => {
+        const value = params.get(paramName);
+        if (value === '1' || value === 'true') launch[stateKey] = true;
+        if (value === '0' || value === 'false') launch[stateKey] = false;
+      });
+      return launch;
+    }
+
     const state = {
       ...defaultState,
-      ...loadCachedState()
+      ...loadCachedState(),
+      ...parseLaunchState()
     };
 
     const canvasElement = document.getElementById('monsoonCanvas');

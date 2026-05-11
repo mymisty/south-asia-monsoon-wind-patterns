@@ -1,1 +1,5 @@
 assets/nasa/world-topo-*.jpg
+
+# PPT generation artifacts
+.codex-skill-install-tmp/
+projects/ppt*/
